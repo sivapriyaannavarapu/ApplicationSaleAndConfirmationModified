@@ -1,50 +1,48 @@
-//package com.application.controller;
-//import java.util.List;
-//import java.util.Map;
-//import java.util.Optional;
-//
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.HttpStatus;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.web.bind.annotation.CrossOrigin;
-//import org.springframework.web.bind.annotation.GetMapping;
-//import org.springframework.web.bind.annotation.PathVariable;
-//import org.springframework.web.bind.annotation.PostMapping;
-//import org.springframework.web.bind.annotation.RequestBody;
-//import org.springframework.web.bind.annotation.RequestMapping;
-//import org.springframework.web.bind.annotation.RequestParam;
-//import org.springframework.web.bind.annotation.RestController;
-//
-//import com.application.dto.ApplicationConfirmationDto;
-//import com.application.dto.BatchDTO;
-//import com.application.dto.BatchDetailsDTO;
-//import com.application.dto.CampusAndZoneDTO;
-//import com.application.dto.EmployeeDetailsDTO;
-//import com.application.dto.ExamProgramDTO;
-//import com.application.dto.OrientationDTO;
-//import com.application.dto.ProgramDTO;
-//import com.application.dto.SectionDTO;
-//import com.application.dto.StreamDTO;
-//import com.application.dto.StudentDetailsDTO;
-//import com.application.entity.AcademicYear;
-//import com.application.entity.ConcessionReason;
-//import com.application.entity.ExamProgram;
-//import com.application.entity.FoodType;
-//import com.application.entity.Language;
-//import com.application.entity.Orientation;
-//import com.application.entity.OrientationBatch;
-//import com.application.entity.ProgramName;
-//import com.application.entity.Section;
-//import com.application.entity.Stream;
+package com.application.controller;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.application.dto.ApiResponse;
+import com.application.dto.BatchDTO;
+import com.application.dto.OccupationSectorDropdownDTO;
+import com.application.dto.OrientationBatchDetailsDTO;
+import com.application.dto.OrientationDropdownDTO;
+import com.application.dto.StudentConfirmationDTO;
+import com.application.entity.BloodGroup;
+import com.application.entity.ConcessionReason;
+import com.application.entity.District;
+import com.application.entity.FoodType;
+import com.application.entity.Gender;
+import com.application.entity.State;
+import com.application.entity.StudentAcademicDetails;
+import com.application.entity.StudentClass;
+import com.application.entity.StudentRelation;
+import com.application.entity.StudentType;
 //import com.application.service.ApplicationConfirmationService;
-//
-//@RestController
-//@RequestMapping("/api/application-confirmation")
-////@CrossOrigin(origins = "*")
-//public class ApplicationConfirmationController {
-//    
+import com.application.service.ApplicationNewConfirmationService;
+
+import jakarta.persistence.EntityNotFoundException;
+
+@RestController
+@RequestMapping("/api/application-confirmation")
+//@CrossOrigin(origins = "*")
+public class ApplicationConfirmationController {
+    
 //    @Autowired
 //    private ApplicationConfirmationService service;
+    
+    @Autowired ApplicationNewConfirmationService confirmationService;
 //    
 //    @PostMapping("/save")
 //    public ResponseEntity<String> saveAdmission(@RequestBody ApplicationConfirmationDto dto) {
@@ -56,7 +54,7 @@
 //                    .body("Error: " + e.getMessage());
 //        }
 //    }
-//    
+    
 //    @GetMapping("/join-years")
 //    public ResponseEntity<List<AcademicYear>> getJoinYears() {
 //        try {
@@ -73,16 +71,16 @@
 ////    }
 //
 //    // 2. Get Course Fee by CourseTrackId
-//    @GetMapping("/{admissionNo}/campus-zone")
-//    public ResponseEntity<CampusAndZoneDTO> getCampusAndZoneByAdmissionNo(@PathVariable String admissionNo) {
-//        CampusAndZoneDTO campusAndZone = service.getCampusAndZoneByAdmissionNo(admissionNo);
-//
-//        if (campusAndZone != null) {
-//            return ResponseEntity.ok(campusAndZone);
-//        } else {
-//            return ResponseEntity.notFound().build();
-//        }
-//    }
+////    @GetMapping("/{admissionNo}/campus-zone")
+////    public ResponseEntity<CampusAndZoneDTO> getCampusAndZoneByAdmissionNo(@PathVariable String admissionNo) {
+////        CampusAndZoneDTO campusAndZone = service.getCampusAndZoneByAdmissionNo(admissionNo);
+////
+////        if (campusAndZone != null) {
+////            return ResponseEntity.ok(campusAndZone);
+////        } else {
+////            return ResponseEntity.notFound().build();
+////        }
+////    }
 //    
 //    @GetMapping("/course-fee/campus/{cmpsId}/track/{courseTrackId}/batch/{courseBatchId}")
 //    public ResponseEntity<Float> getCourseFee(
@@ -96,14 +94,14 @@
 //                .orElse(ResponseEntity.notFound().build());
 //    }
 //    
-//    @GetMapping("/details/{admissionNo}")
-//    public ResponseEntity<StudentDetailsDTO> getStudentDetailsByAdmission(@PathVariable String admissionNo) {
-//        return service.getStudentDetailsByAdmissionNo(admissionNo)
-//                .map(ResponseEntity::ok)
-//                .orElse(ResponseEntity.notFound().build());
-//    }
-//    
-//    
+////    @GetMapping("/details/{admissionNo}")
+////    public ResponseEntity<StudentDetailsDTO> getStudentDetailsByAdmission(@PathVariable String admissionNo) {
+////        return service.getStudentDetailsByAdmissionNo(admissionNo)
+////                .map(ResponseEntity::ok)
+////                .orElse(ResponseEntity.notFound().build());
+////    }
+////    
+////    
 //    @GetMapping("/streams")
 //    public ResponseEntity<List<Stream>> getStreams() {
 //        try {
@@ -163,13 +161,13 @@
 //        }
 //    }
 //    
-//    @GetMapping("/employee-details")
-//    public ResponseEntity<EmployeeDetailsDTO> getEmployeeDetails(@RequestParam String admissionNo) {
-//        Optional<EmployeeDetailsDTO> employeeDetails = service.getEmployeeDetailsByAdmissionNo(admissionNo);
-//        return employeeDetails.map(dto -> new ResponseEntity<>(dto, HttpStatus.OK))
-//                              .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-//    }
-//    
+////    @GetMapping("/employee-details")
+////    public ResponseEntity<EmployeeDetailsDTO> getEmployeeDetails(@RequestParam String admissionNo) {
+////        Optional<EmployeeDetailsDTO> employeeDetails = service.getEmployeeDetailsByAdmissionNo(admissionNo);
+////        return employeeDetails.map(dto -> new ResponseEntity<>(dto, HttpStatus.OK))
+////                              .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+////    }
+////    
 ////    @GetMapping("/getProgramsByStream")
 ////    public List<ProgramName> getProgramsByStream(@RequestParam int streamId) {
 ////        return service.getProgramsByStream(streamId);
@@ -266,6 +264,250 @@
 //
 //        return ResponseEntity.ok(programs);
 //    }
-//
-//
-//}
+    
+    @GetMapping("/dropdown/relation/type")
+    public ResponseEntity<ApiResponse<List<StudentRelation>>> getStudentRelations() {
+        try {
+            List<StudentRelation> relations = confirmationService.getActiveStudentRelations();
+            return ResponseEntity.ok(
+                ApiResponse.success(relations, "Relations fetched successfully.")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch relations: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/dropdown/classes")
+    public ResponseEntity<ApiResponse<List<StudentClass>>> getClasses() {
+        try {
+            List<StudentClass> classes = confirmationService.getActiveClasses();
+            return ResponseEntity.ok(
+                ApiResponse.success(classes, "Classes fetched successfully.")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch classes: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/dropdown/genders")
+    public ResponseEntity<ApiResponse<List<Gender>>> getGenders() {
+        try {
+            List<Gender> genders = confirmationService.getActiveGenders();
+            return ResponseEntity.ok(
+                ApiResponse.success(genders, "Genders fetched successfully.")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch genders: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/dropdown/batches")
+    public ResponseEntity<ApiResponse<List<BatchDTO>>> getOrientationBatches(
+            @RequestParam Integer orientationId) {
+        try {
+            if (orientationId == null) {
+                 return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("orientationId parameter is required."));
+            }
+            List<BatchDTO> batches = confirmationService.getBatchesByOrientation(orientationId);
+            return ResponseEntity.ok(
+                ApiResponse.success(batches, "Batches fetched successfully for orientation ID: " + orientationId)
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch batches: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/dropdown/states")
+    public ResponseEntity<ApiResponse<List<State>>> getStates() {
+        try {
+            List<State> states = confirmationService.getActiveStates();
+            return ResponseEntity.ok(
+                ApiResponse.success(states, "States fetched successfully.")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch states: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/dropdown/districts")
+    public ResponseEntity<ApiResponse<List<District>>> getDistricts(
+            @RequestParam Integer stateId) { // Use @RequestParam to get ID from URL
+        try {
+            if (stateId == null) {
+                 return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("stateId parameter is required."));
+            }
+            List<District> districts = confirmationService.getActiveDistrictsByState(stateId);
+            return ResponseEntity.ok(
+                ApiResponse.success(districts, "Districts fetched successfully for state ID: " + stateId)
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch districts: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/dropdown/studytypes")
+    public ResponseEntity<ApiResponse<List<StudentType>>> getStudyTypes() {
+        try {
+            List<StudentType> studyTypes = confirmationService.getActiveStudyTypes();
+            return ResponseEntity.ok(
+                ApiResponse.success(studyTypes, "Study types fetched successfully.")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch study types: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/dropdown/foodtypes")
+    public ResponseEntity<ApiResponse<List<FoodType>>> getFoodTypes() {
+        try {
+            List<FoodType> studyTypes = confirmationService.getFoodTypes();
+            return ResponseEntity.ok(
+                ApiResponse.success(studyTypes, "Study types fetched successfully.")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch study types: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/dropdown/bloodGrouptypes")
+    public ResponseEntity<ApiResponse<List<BloodGroup>>> getBloodGroupTypes() {
+        try {
+            List<BloodGroup> studyTypes = confirmationService.getBloodGroupTypes();
+            return ResponseEntity.ok(
+                ApiResponse.success(studyTypes, "Study types fetched successfully.")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch study types: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/dropdown/concessionReasontypes")
+    public ResponseEntity<ApiResponse<List<ConcessionReason>>> getConcessionReasonTypes() {
+        try {
+            List<ConcessionReason> studyTypes = confirmationService.getConcessionReasonTypes();
+            return ResponseEntity.ok(
+                ApiResponse.success(studyTypes, "Study types fetched successfully.")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch study types: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/orientation/batch/combo/details")
+    public ResponseEntity<ApiResponse<OrientationBatchDetailsDTO>> getOrientationBatchComboDetails(
+            @RequestParam Integer orientationId,
+            @RequestParam Integer batchId) {
+        try {
+            if (orientationId == null || batchId == null) {
+                 return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Both orientationId and batchId parameters are required."));
+            }
+            // Call the new service method
+            Optional<OrientationBatchDetailsDTO> detailsOpt =
+                confirmationService.getDetailsByOrientationAndBatch(orientationId, batchId);
+
+            if (detailsOpt.isPresent()) {
+                 return ResponseEntity.ok(
+                    ApiResponse.success(detailsOpt.get(), "Details fetched successfully for orientation/batch combo.")
+                 );
+            } else {
+                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("Details not found for Orientation ID: " + orientationId + " and Batch ID: " + batchId));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch orientation/batch details: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/dropdown/occupations")
+    public ResponseEntity<ApiResponse<List<OccupationSectorDropdownDTO>>> getOccupations() {
+        try {
+            List<OccupationSectorDropdownDTO> occupations = confirmationService.getUniqueOccupations();
+            return ResponseEntity.ok(
+                ApiResponse.success(occupations, "Occupations fetched successfully.")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch occupations: " + e.getMessage()));
+        }
+    }
+
+    // --- UPDATE RESPONSE TYPE ---
+    @GetMapping("/dropdown/sectors")
+    public ResponseEntity<ApiResponse<List<OccupationSectorDropdownDTO>>> getSectors() {
+        try {
+            List<OccupationSectorDropdownDTO> sectors = confirmationService.getUniqueSectors();
+            return ResponseEntity.ok(
+                ApiResponse.success(sectors, "Sectors fetched successfully.")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch sectors: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/dropdown/orientations")
+    public ResponseEntity<ApiResponse<List<OrientationDropdownDTO>>> getOrientations(
+            @RequestParam String campusName) { // <-- Change parameter type
+        try {
+            if (campusName == null || campusName.isBlank()) {
+                 return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("campusName parameter is required."));
+            }
+            // --- MODIFIED: Pass name to service ---
+            List<OrientationDropdownDTO> orientations = confirmationService.getOrientationsByCampus(campusName);
+            return ResponseEntity.ok(
+                ApiResponse.success(orientations, "Orientations fetched successfully for campus name: " + campusName)
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch orientations: " + e.getMessage()));
+        }
+    }
+    
+    @PostMapping("/confirm")
+    public ResponseEntity<ApiResponse<?>> saveStudentConfirmation(
+            @RequestBody StudentConfirmationDTO dto) {
+        
+        try {
+            // This is the service method we built
+            StudentAcademicDetails savedStudent = confirmationService.saveOrUpdateConfirmation(dto);
+            
+            // Send a 200 OK response with the student data
+            return ResponseEntity.ok(
+                ApiResponse.success(savedStudent, "Student confirmation saved successfully.")
+            );
+            
+        } catch (EntityNotFoundException e) {
+            // This catches errors like "Student not found", "Status not found", etc.
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+                    
+        } catch (DataIntegrityViolationException e) {
+            // This will catch any future "NOT NULL" constraint errors
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error("Database error: " + e.getMostSpecificCause().getMessage()));
+
+        } catch (Exception e) {
+            // This catches all other unexpected errors
+            e.printStackTrace(); // Log the full error for debugging
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("An unexpected error occurred: " + e.getMessage()));
+        }
+    }
+
+}
