@@ -19,5 +19,8 @@ public class Gender {
 	private int gender_id;
 	@Column(name = "gender_name")
 	private String genderName;
+	
+	@Column(name = "is_active") 
+    private int isActive;
 
 }

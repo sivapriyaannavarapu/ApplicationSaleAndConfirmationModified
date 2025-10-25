@@ -16,4 +16,7 @@ public class StudentClass {
 
     @Column(name = "class_name")
     private String className;
+    
+    @Column(name = "is_active") 
+    private int isActive;
 }
