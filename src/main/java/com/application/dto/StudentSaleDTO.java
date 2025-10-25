@@ -22,6 +22,7 @@ public class StudentSaleDTO {
     private Long aadharCardNo;
     private Integer quotaId;      // From "Quota/Admission Referred By"
     private Long proReceiptNo;
+    private Date appSaleDate;
  
     // --- Parent Information (Step 1) ---
     private String fatherName;

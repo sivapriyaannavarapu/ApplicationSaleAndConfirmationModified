@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+//import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.application.dto.ApiResponse;
 import com.application.dto.BatchDTO;
+import com.application.dto.CampusDropdownDTO;
 import com.application.dto.OccupationSectorDropdownDTO;
 import com.application.dto.OrientationBatchDetailsDTO;
 import com.application.dto.OrientationDropdownDTO;
@@ -481,6 +483,25 @@ public class ApplicationConfirmationController {
                     .body(ApiResponse.error("Failed to fetch orientations: " + e.getMessage()));
         }
     }
+    
+    @GetMapping("/dropdown/campuses")
+    public ResponseEntity<ApiResponse<List<CampusDropdownDTO>>> getCampusesByType(
+            @RequestParam String businessType) { // Parameter name matching the frontend
+        try {
+            if (businessType == null || businessType.isBlank()) {
+                 return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("businessType parameter is required."));
+            }
+            List<CampusDropdownDTO> campuses = confirmationService.getCampusesByBusinessType(businessType.toUpperCase()); // Convert to uppercase to be safe
+            return ResponseEntity.ok(
+                ApiResponse.success(campuses, "Campuses fetched successfully for type: " + businessType)
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch campuses: " + e.getMessage()));
+        }
+    }
+                 
     
     @PostMapping("/confirm")
     public ResponseEntity<ApiResponse<?>> saveStudentConfirmation(

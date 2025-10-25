@@ -341,7 +341,9 @@ public class DgmService {
 
 //    @Cacheable("cities")
     public List<GenericDropdownDTO> getAllCities() {
-        return cityRepository.findAll().stream()
+        final int ACTIVE_STATUS = 1;
+        
+        return cityRepository.findByStatus(ACTIVE_STATUS).stream()
                 .map(city -> new GenericDropdownDTO(city.getCityId(), city.getCityName()))
                 .collect(Collectors.toList());
     }

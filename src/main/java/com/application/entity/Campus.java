@@ -2,6 +2,7 @@ package com.application.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -38,5 +39,13 @@ public class Campus {
 	@ManyToOne
 	@JoinColumn(name = "zone_id")
 	private Zone zone;
-
+	
+	@ManyToOne(fetch = FetchType.LAZY)
+    // --- FIX: Use the correct foreign key column name ---
+    @JoinColumn(name = "business_id") // Changed from business_type_id
+    private BusinessType businessType;
+    // ---
+ 
+    @Column(name = "is_active")
+    private Integer isActive;
 }

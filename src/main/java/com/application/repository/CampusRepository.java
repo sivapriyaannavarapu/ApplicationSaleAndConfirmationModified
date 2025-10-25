@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.application.dto.CampusDetailsDTO;
+import com.application.dto.CampusDropdownDTO;
 import com.application.dto.CampusDto;
 import com.application.entity.Campus;
 import com.application.entity.Zone;
@@ -39,4 +40,11 @@ public interface CampusRepository extends JpaRepository<Campus, Integer>{
 	           "JOIN c.city city " +
 	           "WHERE c.campusId = :campusId")
 	    Optional<CampusDetailsDTO> findCampusDetailsById(@Param("campusId") int campusId);
+	 
+	 @Query("SELECT new com.application.dto.CampusDropdownDTO(c.campusId, c.campusName) " +
+	           "FROM Campus c JOIN c.businessType bt " +
+	           // --- FIX: Compare uppercase versions ---
+	           "WHERE UPPER(bt.businessTypeName) = UPPER(:businessTypeName) AND c.isActive = 1 " +
+	           "ORDER BY c.campusName ASC")
+	    List<CampusDropdownDTO> findActiveCampusesByBusinessTypeName(@Param("businessTypeName") String businessTypeName);
 }

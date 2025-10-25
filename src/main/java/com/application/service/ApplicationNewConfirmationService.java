@@ -6,7 +6,6 @@ import java.util.Comparator;
 // --- Add these imports ---
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 //import java.util.logging.Logger;
@@ -18,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.application.dto.BatchDTO;
+import com.application.dto.CampusDropdownDTO;
 // --- Import all your DTOs ---
 import com.application.dto.ConcessionConfirmationDTO;
 import com.application.dto.OccupationSectorDropdownDTO;
@@ -29,7 +29,6 @@ import com.application.dto.SiblingDTO;
 import com.application.dto.StudentConfirmationDTO;
 import com.application.entity.AcademicYear;
 import com.application.entity.BloodGroup;
-import com.application.entity.CmpsOrientationBatchFeeView;
 import com.application.entity.ConcessionReason;
 import com.application.entity.District;
 import com.application.entity.FoodType;
@@ -51,6 +50,7 @@ import com.application.entity.StudentRelation;
 import com.application.entity.StudentType;
 import com.application.repository.AcademicYearRepository;
 import com.application.repository.BloodGroupRepository;
+import com.application.repository.CampusRepository;
 import com.application.repository.CampusSchoolTypeRepository;
 import com.application.repository.CmpsOrientationBatchFeeViewRepository;
 import com.application.repository.ConcessionReasonRepository;
@@ -118,6 +118,7 @@ public class ApplicationNewConfirmationService {
     @Autowired private OrientationRepository orientationMasterRepo;
     @Autowired private PaymentDetailsRepository paymentDetailsRepo; // --- ADD ---
     @Autowired private PaymentModeRepository paymentModeRepo;
+    @Autowired private CampusRepository campusRepo;
     
     
     
@@ -176,6 +177,12 @@ public class ApplicationNewConfirmationService {
     public List<ConcessionReason> getConcessionReasonTypes() {
         return concessionReasonRepo.findAll(); // Assuming 1 = Active
     }
+    
+    @Cacheable(value = "campusesByBusinessType", key = "#businessTypeName")
+    public List<CampusDropdownDTO> getCampusesByBusinessType(String businessTypeName) {
+        return campusRepo.findActiveCampusesByBusinessTypeName(businessTypeName);
+    }
+    
     
     @Cacheable(value = "orientationAndBatchDetails", key = "{#orientationId, #orientationBatchId}")
     public Optional<OrientationBatchDetailsDTO> getDetailsByOrientationAndBatch(int orientationId, int orientationBatchId) {
@@ -256,6 +263,7 @@ public class ApplicationNewConfirmationService {
         student.setApp_conf_date(dto.getAppConfDate()); 
         student.setPre_school_name(dto.getSchoolName());
         student.setScore_app_no(dto.getScoreAppNo());
+        
         if(dto.getMarks() != null) {
             student.setScore_marks(dto.getMarks());
         }

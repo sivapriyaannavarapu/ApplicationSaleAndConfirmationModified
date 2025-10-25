@@ -90,6 +90,8 @@ public class StudentAdmissionDTO {
     private Integer quotaId;      // From "Quota/Admission Referred By"
     private Long proReceiptNo;
     private String admissionReferedBy;
+    private Date appSaleDate;
+    
  
     // --- Parent Information (Step 1) ---
     private String fatherName;

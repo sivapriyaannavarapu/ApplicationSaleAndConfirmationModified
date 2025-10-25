@@ -366,7 +366,9 @@ public class CampusService {
 
 //    @Cacheable(cacheNames = "citiesByDistrict", key = "#districtId")
     public List<GenericDropdownDTO> getCitiesByDistrictId(int districtId) {
-        return cityRepository.findByDistrictDistrictId(districtId).stream()
+    	
+    	final int ACTIVE_STATUS = 1;
+        return cityRepository.findByDistrictDistrictIdAndStatus(districtId,ACTIVE_STATUS).stream()
                 .map(c -> new GenericDropdownDTO(c.getCityId(), c.getCityName()))
                 .collect(Collectors.toList());
     }

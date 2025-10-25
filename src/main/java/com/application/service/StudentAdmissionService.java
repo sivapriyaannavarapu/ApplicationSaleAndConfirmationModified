@@ -340,7 +340,9 @@ public class StudentAdmissionService {
     
 //    @Cacheable(value = "citiesByDistrict", key = "#districtId")
     public List<GenericDropdownDTO> getCitiesByDistrict(int districtId) {
-        return cityRepo.findByDistrictDistrictId(districtId).stream()
+    	
+    	final int ACTIVE_STATUS = 1;
+        return cityRepo.findByDistrictDistrictIdAndStatus(districtId,ACTIVE_STATUS).stream()
                 .map(c -> new GenericDropdownDTO(c.getCityId(), c.getCityName()))
                 .collect(Collectors.toList());
     }
@@ -523,6 +525,7 @@ public class StudentAdmissionService {
 		academicDetails.setLast_name(formData.getLastName());
 		academicDetails.setApaar_no(formData.getApaarNo());
 		academicDetails.setAdms_date(LocalDate.now());
+		academicDetails.setApp_sale_date(formData.getAppSaleDate());
 		
 		if (formData.getProId() != null) {
 		    // Convert the Integer Employee ID from the DTO to a String
@@ -718,6 +721,7 @@ public class StudentAdmissionService {
 		academicDetails.setLast_name(formData.getLastName());
 		academicDetails.setApaar_no(formData.getApaarNo());
 		academicDetails.setAdms_date(LocalDate.now());
+		academicDetails.setApp_sale_date(formData.getAppSaleDate());
 		
 		if (formData.getProId() != null) {
 		    // Convert the Integer Employee ID from the DTO to a String
@@ -756,7 +760,7 @@ public class StudentAdmissionService {
 				.orElseThrow(() -> new EntityNotFoundException("Default StudyType (ID: 1) not found"));
 		academicDetails.setStudyType(defaultStudyType);
  
-		Status defaultStatus = statusRepo.findById(1)
+		Status defaultStatus = statusRepo.findById(8)
 				.orElseThrow(() -> new EntityNotFoundException("Default Status (ID: 1) not found"));
 		academicDetails.setStatus(defaultStatus);
  

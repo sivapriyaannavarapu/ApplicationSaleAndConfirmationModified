@@ -22,4 +22,6 @@ public class City {
     @ManyToOne
     @JoinColumn(name = "district_id")
     private District district;
+    
+    private int status;
 }

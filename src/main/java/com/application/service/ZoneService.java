@@ -586,9 +586,9 @@ public class ZoneService {
 
 //    @Cacheable(cacheNames = "citiesByState", key = "#stateId")
 	public List<City> getCitiesByState(int stateId) {
-		return cityRepository.findByDistrictStateStateId(stateId);
+	    final int ACTIVE_STATUS = 1;
+	    return cityRepository.findByDistrictStateStateIdAndStatus(stateId, ACTIVE_STATUS);
 	}
-
 //    @Cacheable(cacheNames = "zonesByCity", key = "#cityId")
 	public List<Zone> getZonesByCity(int cityId) {
 		return zoneRepository.findByCityCityId(cityId);
