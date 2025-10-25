@@ -238,17 +238,10 @@ public class ApplicationNewConfirmationService {
                 .collect(Collectors.toList());
     }
     
-    @Cacheable(value = "orientationsByCampusName", key = "#campusName")
-    public List<OrientationDropdownDTO> getOrientationsByCampus(String campusName) { // <-- Change parameter type
+    @Cacheable(value = "orientationsByCampusAndClass", key = "{#campusId, #classId}")
+    public List<OrientationDropdownDTO> getOrientationsByCampusAndClass(int campusId, int classId) { // <-- Change parameters
         // --- MODIFIED: Call the new repository method ---
-        List<CmpsOrientationBatchFeeView> viewResults = cmpsOrientationBatchFeeViewRepo.findByCmpsName(campusName);
-
-        // Extract distinct orientations (same stream logic as before)
-        return viewResults.stream()
-                .filter(Objects::nonNull)
-                .map(view -> new OrientationDropdownDTO(view.getOrientationId(), view.getOrientationName()))
-                .distinct()
-                .collect(Collectors.toList());
+        return cmpsOrientationBatchFeeViewRepo.findDistinctOrientationsByCampusAndClass(campusId, classId);
     }
     
     @Transactional

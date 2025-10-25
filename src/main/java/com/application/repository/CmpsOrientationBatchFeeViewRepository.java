@@ -13,6 +13,7 @@ import com.application.dto.ClassDTO;
 import com.application.dto.GenericDropdownDTO;
 import com.application.dto.OrientationBatchDetailsDTO;
 import com.application.dto.OrientationDTO;
+import com.application.dto.OrientationDropdownDTO;
 import com.application.entity.CmpsOrientationBatchFeeView;
 
 @Repository
@@ -75,5 +76,10 @@ public interface CmpsOrientationBatchFeeViewRepository extends JpaRepository<Cmp
 	             @Param("orientationId") int orientationId,
 	             @Param("orientationBatchId") int orientationBatchId);
 	 
-	 List<CmpsOrientationBatchFeeView> findByCmpsName(String campusName);
+	 @Query("SELECT DISTINCT new com.application.dto.OrientationDropdownDTO(c.orientationId, c.orientationName) " +
+	            "FROM CmpsOrientationBatchFeeView c " +
+	            "WHERE c.cmpsId = :campusId AND c.classId = :classId")
+	     List<OrientationDropdownDTO> findDistinctOrientationsByCampusAndClass(
+	             @Param("campusId") int campusId,
+	             @Param("classId") int classId);
 }

@@ -461,16 +461,20 @@ public class ApplicationConfirmationController {
     
     @GetMapping("/dropdown/orientations")
     public ResponseEntity<ApiResponse<List<OrientationDropdownDTO>>> getOrientations(
-            @RequestParam String campusName) { // <-- Change parameter type
+            @RequestParam Integer campusId, // Keep campusId
+            @RequestParam Integer classId) {  // <-- ADD classId parameter
         try {
-            if (campusName == null || campusName.isBlank()) {
+            // Check both parameters
+            if (campusId == null || classId == null) {
                  return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("campusName parameter is required."));
+                    .body(ApiResponse.error("Both campusId and classId parameters are required."));
             }
-            // --- MODIFIED: Pass name to service ---
-            List<OrientationDropdownDTO> orientations = confirmationService.getOrientationsByCampus(campusName);
+            // --- MODIFIED: Pass both IDs to service ---
+            List<OrientationDropdownDTO> orientations =
+                confirmationService.getOrientationsByCampusAndClass(campusId, classId);
+ 
             return ResponseEntity.ok(
-                ApiResponse.success(orientations, "Orientations fetched successfully for campus name: " + campusName)
+                ApiResponse.success(orientations, "Orientations fetched successfully for campus ID: " + campusId + " and class ID: " + classId)
             );
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
