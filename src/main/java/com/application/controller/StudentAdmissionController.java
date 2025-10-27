@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.application.dto.ApiResponse;
+import com.application.dto.ApplicationDetailsDTO;
 import com.application.dto.BankDetailsDTO;
 import com.application.dto.CampusAndZoneDTO;
 import com.application.dto.CampusDetailsDTO;
@@ -28,6 +30,8 @@ import com.application.dto.StudentAdmissionDTO;
 import com.application.dto.StudentSaleDTO;
 import com.application.entity.StudyType;
 import com.application.service.StudentAdmissionService;
+
+import jakarta.persistence.EntityNotFoundException;
  
 @RestController
 @RequestMapping("/api/student-admissions-sale")
@@ -355,6 +359,29 @@ public class StudentAdmissionController {
     @GetMapping("/castes")
     public List<GenericDropdownDTO> getCastes() {
         return studentAdmissionService.getAllCastes();
+    }
+    
+    @GetMapping("/details/{studAdmsNo}")
+    public ResponseEntity<ApiResponse<?>> getApplicationDetails(
+            @PathVariable Long studAdmsNo) {
+        try {
+            // Call the service method we created
+            ApplicationDetailsDTO details = studentAdmissionService.getApplicationDetailsByAdmissionNo(studAdmsNo);
+            
+            // Return 200 OK with the fetched data
+            return ResponseEntity.ok(ApiResponse.success(details, "Application details fetched successfully."));
+            	
+        } catch (EntityNotFoundException e) {
+            // Return 404 Not Found if the student doesn't exist
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+                    
+        } catch (Exception e) {
+            // Return 500 Internal Server Error for any other issues
+            e.printStackTrace(); // Log the full error stack trace for debugging
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch application details: " + e.getMessage()));
+        }
     }
     
 

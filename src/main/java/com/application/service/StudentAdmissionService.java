@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.application.dto.AddressDetailsDTO;
+import com.application.dto.AddressDetailsNewDTO;
+import com.application.dto.ApplicationDetailsDTO;
 import com.application.dto.BankDetailsDTO;
 import com.application.dto.CampusAndZoneDTO;
 import com.application.dto.CampusDetailsDTO;
@@ -22,6 +24,7 @@ import com.application.dto.GenericDropdownDTO;
 import com.application.dto.OrientationBatchDetailsDTO;
 import com.application.dto.OrientationDTO;
 import com.application.dto.OrientationResponseDTO;
+import com.application.dto.ParentSummaryDTO;
 import com.application.dto.PaymentDetailsDTO;
 import com.application.dto.PinCodeLocationDTO;
 import com.application.dto.StudentAdmissionDTO;
@@ -165,6 +168,7 @@ public class StudentAdmissionService {
     @Autowired private CampusRepository campusRepository;
     @Autowired private StateAppRepository stateAppRepository;
     @Autowired private DistributionRepository distributionRepository;
+    @Autowired private StudentOrientationDetailsRepository orientationDetailsRepo;
 
 
     StudentAdmissionService(CampusDetailsRepository campusDetailsRepository) {
@@ -842,4 +846,110 @@ public class StudentAdmissionService {
 		}
 		return savedAcademicDetails;
 	}
+	
+	public ApplicationDetailsDTO getApplicationDetailsByAdmissionNo(Long studAdmsNo) {
+        // 1. Fetch the main academic record
+        StudentAcademicDetails student = academicDetailsRepo.findByStudAdmsNo(studAdmsNo)
+            .orElseThrow(() -> new EntityNotFoundException("Student not found with Admission No: " + studAdmsNo));
+
+        // 2. Fetch related records (handle possibility of them being null)
+        Optional<StudentPersonalDetails> personalOpt = personalDetailsRepo.findByStudentAcademicDetails(student);
+        Optional<StudentOrientationDetails> orientationOpt = orientationDetailsRepo.findByStudentAcademicDetails(student);
+        // Assuming Father has relationTypeId = 1
+        Optional<ParentDetails> fatherOpt = parentDetailsRepo.findByStudentAcademicDetailsAndStudentRelationStudentRelationId(student, 1);
+        Optional<StudentAddress> addressOpt = addressRepo.findByStudentAcademicDetails(student);
+
+        // 3. Create the main DTO
+        ApplicationDetailsDTO detailsDTO = new ApplicationDetailsDTO();
+
+        // 4. Map Academic Details
+        detailsDTO.setFirstName(student.getFirst_name());
+        detailsDTO.setLastName(student.getLast_name());
+        detailsDTO.setApaarNo(student.getApaar_no());
+        detailsDTO.setProReceiptNo((long) student.getPro_receipt_no());
+        if (student.getGender() != null) {
+            detailsDTO.setGenderId(student.getGender().getGender_id());
+            detailsDTO.setGenderName(student.getGender().getGenderName());
+        }
+        // Assuming admissionReferredBy on academicDetails is the ID/Name String? Adjust if it's an object.
+        // detailsDTO.setAdmissionReferredById(...); // Map based on how referred by is stored
+        // detailsDTO.setAdmissionReferredByName(student.getAdmission_referred_by());
+
+        if (student.getQuota() != null) {
+            detailsDTO.setQuotaId(student.getQuota().getQuota_id());
+            detailsDTO.setQuotaName(student.getQuota().getQuota_name());
+        }
+        if (student.getAcademicYear() != null) {
+            detailsDTO.setAcademicYearId(student.getAcademicYear().getAcdcYearId());
+            detailsDTO.setAcademicYearValue(student.getAcademicYear().getAcademicYear());       
+            }
+        if (student.getCampus() != null) {
+            detailsDTO.setBranchId(student.getCampus().getCampusId());
+            detailsDTO.setBranchName(student.getCampus().getCampusName());
+        }
+        if (student.getStudentType() != null) {
+            detailsDTO.setStudentTypeId(student.getStudentType().getStud_type_id());
+            detailsDTO.setStudentTypeName(student.getStudentType().getStud_type()); // Use Lombok's generated getter
+            }
+        if (student.getStudentClass() != null) {
+            detailsDTO.setJoiningClassId(student.getStudentClass().getClassId());
+            detailsDTO.setJoiningClassName(student.getStudentClass().getClassName());
+        }
+         if (student.getCampusSchoolType() != null) { // Assuming this is Branch Type
+             detailsDTO.setBranchTypeId(student.getCampusSchoolType().getSchool_type_id());
+             detailsDTO.setBranchTypeName(student.getCampusSchoolType().getSchool_type_name());
+         }
+        if (student.getAdmissionType() != null) {
+            detailsDTO.setAdmissionTypeId(student.getAdmissionType().getAdms_type_id());
+            detailsDTO.setAdmissionTypeName(student.getAdmissionType().getAdms_type_name());
+        }
+
+        // 5. Map Personal Details
+        personalOpt.ifPresent(personal -> {
+            detailsDTO.setDob(personal.getDob());
+            detailsDTO.setAadharCardNo(personal.getStud_aadhaar_no());
+        });
+
+        // 6. Map Orientation Details (including Orientation Name and City if applicable)
+        orientationOpt.ifPresent(orientation -> {
+            if (orientation.getOrientation() != null) {
+                detailsDTO.setOrientationId(orientation.getOrientation().getOrientationId());
+                detailsDTO.setOrientationName(orientation.getOrientation().getOrientation_name());
+            }
+            // Map Orientation City if it exists on StudentOrientationDetails
+            // if (orientation.getCity() != null) {
+            //     detailsDTO.setCityId(orientation.getCity().getCityId());
+            //     detailsDTO.setCityName(orientation.getCity().getCityName());
+            // }
+        });
+
+        // 7. Map Parent Details (Father only for this DTO)
+        fatherOpt.ifPresent(father -> {
+            detailsDTO.setParentInfo(new ParentSummaryDTO(father.getName(), father.getMobileNo()));
+        });
+
+        // 8. Map Address Details
+        addressOpt.ifPresent(address -> {
+            AddressDetailsNewDTO addressDTO = new AddressDetailsNewDTO();
+            addressDTO.setDoorNo(address.getHouse_no());
+            addressDTO.setStreet(address.getStreet());
+            addressDTO.setLandmark(address.getLandmark());
+            addressDTO.setArea(address.getArea());
+            addressDTO.setPincode(address.getPostalCode());
+            if (address.getDistrict() != null) {
+                addressDTO.setDistrictId(address.getDistrict().getDistrictId());
+                addressDTO.setDistrictName(address.getDistrict().getDistrictName());            }
+            if (address.getMandal() != null) {
+                addressDTO.setMandalId(address.getMandal().getMandal_id());
+                addressDTO.setMandalName(address.getMandal().getMandal_name());
+            }
+            if (address.getCity() != null) {
+                addressDTO.setCityId(address.getCity().getCityId());
+                addressDTO.setCityName(address.getCity().getCityName());
+            }
+            detailsDTO.setAddressDetails(addressDTO);
+        });
+
+        return detailsDTO;
+    }
 }
