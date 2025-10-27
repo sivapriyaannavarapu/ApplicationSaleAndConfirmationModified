@@ -53,10 +53,12 @@ import lombok.NoArgsConstructor;
 public class PaymentDetailsDTO {
  
     // --- Core Payment Info ---
-	private Integer paymentModeId; // 1=Cash, 2=DD, 3=Cheque, etc.
+	private Integer paymentModeId;
     private Date paymentDate;
     private Float amount;
     private String prePrintedReceiptNo;
     private String remarks;
     private Integer createdBy;
+    
+    
 }

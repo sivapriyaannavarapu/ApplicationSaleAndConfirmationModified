@@ -567,7 +567,7 @@ public class StudentAdmissionService {
 				.orElseThrow(() -> new EntityNotFoundException("Default StudyType (ID: 1) not found"));
 		academicDetails.setStudyType(defaultStudyType);
  
-		Status defaultStatus = statusRepo.findById(1)
+		Status defaultStatus = statusRepo.findById(2)
 				.orElseThrow(() -> new EntityNotFoundException("Default Status (ID: 1) not found"));
 		academicDetails.setStatus(defaultStatus);
  
@@ -672,7 +672,7 @@ public class StudentAdmissionService {
 				paymentModeRepo.findById(paymentDTO.getPaymentModeId()).ifPresent(paymentDetails::setPaymenMode);
 			}
  
-			// We use the same 'defaultStatus' from FIX 1
+
 			paymentDetails.setStatus(defaultStatus);
  
 			paymentDetailsRepo.save(paymentDetails);
