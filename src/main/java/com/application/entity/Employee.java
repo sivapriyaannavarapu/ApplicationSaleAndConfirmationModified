@@ -1,5 +1,6 @@
 package com.application.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,6 +25,8 @@ public class Employee {
 	private String first_name;
 	private String last_name;
 	private String primary_mobile_no;
+	@Column(name = "is_active")
+    private Integer isActive;
 	
 	@ManyToOne
     @JoinColumn(name = "cmps_id")

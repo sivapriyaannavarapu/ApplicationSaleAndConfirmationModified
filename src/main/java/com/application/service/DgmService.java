@@ -284,12 +284,11 @@ package com.application.service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -297,11 +296,9 @@ import com.application.dto.AppDistributionDTO;
 import com.application.dto.AppFromDTO;
 import com.application.dto.AppNumberRangeDTO;
 import com.application.dto.AppRangeDTO;
-import com.application.dto.ApplicationStartEndDto;
 import com.application.dto.EmployeeApplicationsDTO;
 import com.application.dto.FormSubmissionDTO;
 import com.application.dto.GenericDropdownDTO;
-import com.application.dto.NextAppNumberDTO;
 import com.application.entity.BalanceTrack;
 import com.application.entity.Campus;
 import com.application.entity.Distribution;
@@ -311,6 +308,7 @@ import com.application.repository.AppIssuedTypeRepository;
 import com.application.repository.BalanceTrackRepository;
 import com.application.repository.CampusRepository;
 import com.application.repository.CityRepository;
+import com.application.repository.DgmRepository;
 import com.application.repository.DistributionRepository;
 import com.application.repository.EmployeeRepository;
 import com.application.repository.ZoneRepository;
@@ -330,6 +328,7 @@ public class DgmService {
     private final DistributionRepository distributionRepository;
     private final EmployeeRepository employeeRepository;
     private final BalanceTrackRepository balanceTrackRepository;
+    private final DgmRepository dgmRepository;
 
     // --- Dropdown and Helper Methods with Caching ---
 //    @Cacheable("academicYears")
@@ -408,6 +407,23 @@ public class DgmService {
         return employeeRepository.findMobileNoByEmpId(empId);
     }
     
+    public List<GenericDropdownDTO> getDgmEmployeesForCampus(int campusId) {
+        // 1. Find the Campus by ID
+        Optional<Campus> campusOptional = campusRepository.findById(campusId);
+
+        if (campusOptional.isEmpty()) {
+            return Collections.emptyList(); 
+        }
+
+        // 2. Get the Zone ID from the Campus
+        Campus campus = campusOptional.get();
+        int zoneId = campus.getZone().getZoneId(); 
+
+        // 3. Find distinct DGM employees for that Zone, checking isActive = 1
+        // Calling the updated repository method:
+        return dgmRepository.findDistinctActiveEmployeesByZoneId(zoneId); 
+    }
+    
     public Optional<AppDistributionDTO> getActiveAppRange(int issuedToEmpId, int academicYearId) {
         // Pass '1' explicitly for the isActive condition
         return distributionRepository.findActiveAppRangeByEmployeeAndAcademicYear(
@@ -453,6 +469,33 @@ public class DgmService {
         return new AppRangeDTO(appStartNo, appEndNo, appFrom, appBalanceTrkId);
     }
     
+    public AppRangeDTO getAppRange(int empId, int academicYearId, Integer cityId) { // Updated signature
+        // Fetch distribution data
+        AppDistributionDTO distDTO = distributionRepository
+                .findActiveAppRangeByEmployeeAndAcademicYear(empId, academicYearId, cityId) // Pass cityId
+                .orElse(null);
+
+        // Fetch balance track data (now returns AppFromDTO with the ID)
+        AppFromDTO fromDTO = balanceTrackRepository
+                .getAppFromByEmployeeAndAcademicYear(empId, academicYearId)
+                .orElse(null);
+
+        if (distDTO == null && fromDTO == null) {
+            return null; 
+        }
+
+        // Merge results into a single DTO
+        Integer appStartNo = distDTO != null ? distDTO.getAppStartNo() : null;
+        Integer appEndNo = distDTO != null ? distDTO.getAppEndNo() : null;
+        
+        // Extract fields from the updated AppFromDTO
+        Integer appFrom = fromDTO != null ? fromDTO.getAppFrom() : null;
+        Integer appBalanceTrkId = fromDTO != null ? fromDTO.getAppBalanceTrkId() : null; // Extracted new ID
+
+        // Use the updated AppRangeDTO constructor
+        return new AppRangeDTO(appStartNo, appEndNo, appFrom, appBalanceTrkId);
+    }
+    
 
     private int getIssuedTypeByUserId(int userId) {
         // Example logic: return issuer type ID
@@ -475,36 +518,18 @@ public class DgmService {
         int receiverEmpId = formDto.getDgmEmployeeId();
         int issuedById = getIssuedTypeByUserId(issuerUserId);
 
-//        int newStart = Integer.parseInt(formDto.getApplicationNoFrom());
-//        int newEnd = Integer.parseInt(formDto.getApplicationNoTo());
-//
-//        // Check for overlapping distributions (only active ones)
-//        List<Distribution> overlappingDists = distributionRepository.findOverlappingDistributions(
-//                formDto.getAcademicYearId(),
-//                newStart,
-//                newEnd
-//        );
-//        
-//        // Filter out distributions that belong to the same employee (those don't need splitting)
-//        List<Distribution> distributionsToSplit = overlappingDists.stream()
-//                .filter(dist -> dist.getIssued_to_emp_id() != receiverEmpId)
-//                .collect(Collectors.toList());
-//
-//        // Only handle overlapping distributions if there are any that belong to different employees
-//        if (!distributionsToSplit.isEmpty()) {
-//            handleOverlappingDistributions(distributionsToSplit, formDto);
-//        }
-
         // Create and save the new distribution
         Distribution distribution = new Distribution();
         mapDtoToDistribution(distribution, formDto, issuedById);
         distributionRepository.save(distribution);
 
         // Recalculate balances
+        // Recalculate for the ISSUER (who loses applications)
         recalculateBalanceForEmployee(issuerUserId, formDto.getAcademicYearId(), issuedById, issuerUserId);
+        
+        // Recalculate for the RECEIVER (who gains applications)
         recalculateBalanceForEmployee(receiverEmpId, formDto.getAcademicYearId(), formDto.getIssuedToId(), issuerUserId);
     }
-
     /**
      * Revised method to implement the inactivation-and-insert pattern for updates.
      */
@@ -620,6 +645,8 @@ public class DgmService {
 
  // REVISED recalculateBalanceForEmployee in DgmService
     private void recalculateBalanceForEmployee(int employeeId, int academicYearId, int typeId, int createdBy) {
+        
+        // Finds existing BalanceTrack or creates a new one (AppBalanceTrkId will be 0 or null before save)
         BalanceTrack balance = balanceTrackRepository.findBalanceTrack(academicYearId, employeeId)
                 .orElseGet(() -> createNewBalanceTrack(employeeId, academicYearId, typeId, createdBy));
 
@@ -633,23 +660,28 @@ public class DgmService {
         int availableCount = totalReceived - totalDistributed;
 
         // 4. Calculate current min/max range of received
+        // These queries return the actual min/max number from the Distribution table
         Integer minReceived = distributionRepository.findMinAppStartNoByIssuedToEmpIdAndAcademicYearId(employeeId, academicYearId).orElse(0);
         Integer maxReceived = distributionRepository.findMaxAppEndNoByIssuedToEmpIdAndAcademicYearId(employeeId, academicYearId).orElse(0);
 
         // 5. Find the maximum end number the employee has distributed (issued BY them)
         Integer maxDistributed = distributionRepository.findMaxAppEndNoByCreatedByAndAcademicYearId(employeeId, academicYearId).orElse(0);
 
-        // 6. Adjust the available range
+        // 6. Adjust the available range (this logic is executed for both existing and new records)
         if (maxDistributed != null && maxDistributed >= minReceived && maxDistributed < maxReceived) {
-            balance.setAppFrom(maxDistributed + 1); // start from next available
+            // Employee has distributed some, so start is max distributed + 1
+            balance.setAppFrom(maxDistributed + 1); 
             balance.setAppTo(maxReceived);
         } else {
+            // Employee has distributed none, or all distributed were outside the current range.
+            // Set the full received range.
             balance.setAppFrom(minReceived);
             balance.setAppTo(maxReceived);
         }
 
         balance.setAppAvblCnt(availableCount);
-        balanceTrackRepository.save(balance);
+        // Saving the record creates a new AppBalanceTrkId if it didn't exist, and posts the correct appFrom/appTo
+        balanceTrackRepository.save(balance); 
     }
 
     /**

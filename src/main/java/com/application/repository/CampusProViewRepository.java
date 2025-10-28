@@ -14,4 +14,7 @@ public interface CampusProViewRepository extends JpaRepository<CampusProView, In
 	
 	@Query("SELECT v FROM CampusProView v WHERE v.cmps_id = :campusId")
     List<CampusProView> findByCampusId(@Param("campusId") int campusId);
+	
+	@Query("SELECT cpv.emp_id FROM CampusProView cpv WHERE cpv.cmps_id = :campusId")
+    List<Integer> findEmployeeIdsByCampusId(@Param("campusId") int campusId);
 }

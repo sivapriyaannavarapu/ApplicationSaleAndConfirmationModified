@@ -184,9 +184,24 @@ public class DistributionGet {
 	        return dgmService.getAllCampaignAreas();
 	    }
 	    
-	    @GetMapping("/pros/{campusId}")
+	    @GetMapping("/pro/{campusId}")
 	    public List<GenericDropdownDTO> getProsByCampus(@PathVariable int campusId) {
 	        return dgmService.getProsByCampusId(campusId);
+	    }
+	   
+	    @GetMapping("/pros/{campusId}")
+	    public ResponseEntity<List<GenericDropdownDTO>> getEmployeeDropdown(
+	            @PathVariable int campusId) {
+
+	        // 1. Call the service layer method to execute the JPQL query
+	        List<GenericDropdownDTO> employees = dgmService.getEmployeeDropdownByCampus(campusId);
+
+	        // 2. Return the list with an HTTP 200 OK status
+	        if (employees.isEmpty()) {
+	            // Optional: Return 204 No Content or an empty list if no results
+	            return ResponseEntity.ok(employees);
+	        }
+	        return ResponseEntity.ok(employees);
 	    }
 	    
 	    @GetMapping("/getalldistricts")
@@ -268,6 +283,21 @@ public class DistributionGet {
 	        return ResponseEntity.ok(appRange);
 	    }
 	    
+	    
+	    @GetMapping("/range/withcityid")
+	    public ResponseEntity<AppRangeDTO> getAppRanges(
+	            @RequestParam int empId,
+	            @RequestParam int academicYearId,
+	            @RequestParam(required = false) Integer cityId) { // Added cityId
+
+	        AppRangeDTO appRange = applicationService.getAppRange(empId, academicYearId, cityId); // Pass cityId
+
+	        if (appRange == null) {
+	            return ResponseEntity.notFound().build();
+	        }
+
+	        return ResponseEntity.ok(appRange);
+	    }
 	    @GetMapping("/next-app-number/top-issuer")
 	    public ResponseEntity<NextAppNumberDTO> getNextApplicationNumber(
 	            @RequestParam("academicYearId") int academicYearId,
@@ -303,6 +333,22 @@ public class DistributionGet {
 	        // Pass both to the service method
 	        ApplicationRangeInfoDTO rangeInfo = distributionService.getApplicationNumberInfo(academicYearId, stateId, cityId);
 	        return ResponseEntity.ok(rangeInfo);
+	    }
+	    
+	    @GetMapping("/dgm/{campusId}")
+	    public ResponseEntity<List<GenericDropdownDTO>> getActiveDgmEmployeesByCampus(
+	            @PathVariable int campusId) { // Use @PathVariable
+
+	        // Call the service method to fetch the data
+	        List<GenericDropdownDTO> dgmEmployees = applicationService.getDgmEmployeesForCampus(campusId);
+
+	        if (dgmEmployees.isEmpty()) {
+	            // Return 404 Not Found if no employees are found
+	            return ResponseEntity.notFound().build();
+	        }
+
+	        // Return the list with HTTP 200 OK
+	        return ResponseEntity.ok(dgmEmployees);
 	    }
 	    
 }

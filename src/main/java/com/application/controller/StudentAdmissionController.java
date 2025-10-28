@@ -2,6 +2,7 @@
 package com.application.controller;
  
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.application.dto.ApiResponse;
 import com.application.dto.ApplicationDetailsDTO;
@@ -225,21 +227,6 @@ public class StudentAdmissionController {
     	return studentAdmissionService.getAllSchoolTypes(); 
     }
     
-    @GetMapping("/college/campus-zone-year-fee/{admissionNo}")
-    public ResponseEntity<CampusAndZoneDTO> getCampusZoneYearFeeForCollege(
-            @PathVariable Long admissionNo) {
-        CampusAndZoneDTO dto = studentAdmissionService.getCampusZoneYearAndFeeByAdmissionNo(admissionNo);
-        return ResponseEntity.ok(dto);
-    }
-
-    // ✅ Schools API (new)
-    @GetMapping("/school/campus-zone-year-fee/{admissionNo}")
-    public ResponseEntity<CampusAndZoneDTO> getCampusZoneYearFeeForSchool(
-            @PathVariable Long admissionNo) {
-        CampusAndZoneDTO dto = studentAdmissionService.getCampusZoneYearAndFeeForSchool(admissionNo);
-        return ResponseEntity.ok(dto);
-    }
-    
     @PostMapping("/concessiontype_ids")
     public ResponseEntity<List<ConcessionTypeDTO>> getConcessionTypesByNames(
             @RequestBody List<String> concTypes) {
@@ -384,6 +371,22 @@ public class StudentAdmissionController {
         }
     }
     
+    @GetMapping("/by-application-no/{applicationNo}")
+    public ResponseEntity<ApiResponse<CampusAndZoneDTO>> getDetailsWithFee(
+            @RequestParam Long appNo) { // Assuming appNo is int
+        try {
+        	CampusAndZoneDTO details = studentAdmissionService.getApplicationDetailsWithFee(appNo);
+            return ResponseEntity.ok(ApiResponse.success(details, "Details fetched successfully."));
+        } catch (EntityNotFoundException e) {
+            // Return 404 if any required linked record is missing
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace(); // Log error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch application details: " + e.getMessage()));
+        }
+    }
 
 }
  

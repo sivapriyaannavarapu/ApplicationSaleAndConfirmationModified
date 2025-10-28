@@ -6,6 +6,7 @@ import java.util.Comparator;
 // --- Add these imports ---
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 //import java.util.logging.Logger;
@@ -23,12 +24,14 @@ import com.application.dto.ConcessionConfirmationDTO;
 import com.application.dto.OccupationSectorDropdownDTO;
 import com.application.dto.OrientationBatchDetailsDTO;
 import com.application.dto.OrientationDropdownDTO;
+import com.application.dto.OrientationFeeDTO;
 import com.application.dto.ParentDetailsDTO;
 import com.application.dto.PaymentDetailsDTO;
 import com.application.dto.SiblingDTO;
 import com.application.dto.StudentConfirmationDTO;
 import com.application.entity.AcademicYear;
 import com.application.entity.BloodGroup;
+import com.application.entity.CmpsOrientationBatchFeeView;
 import com.application.entity.ConcessionReason;
 import com.application.entity.District;
 import com.application.entity.FoodType;
@@ -249,6 +252,19 @@ public class ApplicationNewConfirmationService {
     public List<OrientationDropdownDTO> getOrientationsByCampusAndClass(int campusId, int classId) { // <-- Change parameters
         // --- MODIFIED: Call the new repository method ---
         return cmpsOrientationBatchFeeViewRepo.findDistinctOrientationsByCampusAndClass(campusId, classId);
+    }
+    
+    @Cacheable(value = "orientationFee", key = "#orientationId")
+    public Optional<OrientationFeeDTO> getOrientationFeeById(int orientationId) {
+        // Use the existing repository method
+        List<CmpsOrientationBatchFeeView> detailsList =
+            cmpsOrientationBatchFeeViewRepo.findByOrientationId(orientationId);
+ 
+        // Find the first non-null result and extract the fee
+        return detailsList.stream()
+                .filter(Objects::nonNull) // Ensure the view object itself isn't null
+                .findFirst() // Get the first record found
+                .map(view -> new OrientationFeeDTO(view.getOrientationFee())); // Create DTO from the fee
     }
     
     @Transactional

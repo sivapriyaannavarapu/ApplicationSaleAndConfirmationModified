@@ -37,5 +37,8 @@ public interface BalanceTrackRepository extends JpaRepository<BalanceTrack, Inte
      Optional<AppFromDTO> getAppFromByEmployeeAndAcademicYear(
             @Param("employeeId") int employeeId, 
             @Param("academicYearId") int academicYearId);
+    
+    @Query("SELECT bt FROM BalanceTrack bt WHERE :appNo BETWEEN bt.appFrom AND bt.appTo AND bt.isActive = 1")
+    Optional<BalanceTrack> findActiveBalanceTrackByAppNoRange(@Param("appNo") Long appNo);
 
 }

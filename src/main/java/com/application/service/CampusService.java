@@ -397,6 +397,20 @@ public class CampusService {
                 .map(e -> new GenericDropdownDTO(e.getEmp_id(), e.getFirst_name() + " " + e.getLast_name()))
                 .collect(Collectors.toList());
     }
+    
+public List<GenericDropdownDTO> getEmployeeDropdownByCampus(int campusId) {
+        
+        // 1. Get the list of emp_id's from CampusProView based on campusId
+        List<Integer> employeeIds = campusProViewRepository.findEmployeeIdsByCampusId(campusId);
+
+        // Check if any IDs were found to avoid running an empty IN clause
+        if (employeeIds.isEmpty()) {
+            return List.of(); // Return an empty list
+        }
+
+        // 2. Use the list of IDs to fetch the employee details and map to DTO
+        return employeeRepository.findEmployeesByIdsAsDropdown(employeeIds);
+    }
 
 //    @Cacheable("issuedToTypes")
     public List<GenericDropdownDTO> getAllIssuedToTypes() {
@@ -446,20 +460,23 @@ public class CampusService {
     public void submitDgmToCampusForm(@NonNull DgmToCampusFormDTO formDto) {
         int dgmUserId = formDto.getUserId();
         int proEmployeeId = formDto.getProEmployeeId();
-        int dgmUserTypeId = getDgmUserTypeId();
+        int dgmUserTypeId = getDgmUserTypeId(); // Assuming this helper exists and works
 
-//        List<Distribution> overlappingDists = distributionRepository.findOverlappingDistributions(
-//                formDto.getAcademicYearId(),
-//                Integer.parseInt(formDto.getApplicationNoFrom()),
-//                Integer.parseInt(formDto.getApplicationNoTo())
-//        );
-//        if (!overlappingDists.isEmpty()) handleOverlappingDistributions(overlappingDists, formDto);
+        // The commented-out overlapping distribution logic is safe to keep commented 
+        // out if that feature is not required for the DGM -> PRO transfer.
 
+        // 1. Create and save the new distribution
         Distribution distribution = new Distribution();
-        mapDtoToDistribution(distribution, formDto, dgmUserTypeId);
+        // Assuming mapDtoToDistribution is updated to handle DgmToCampusFormDTO
+        mapDtoToDistribution(distribution, formDto, dgmUserTypeId); 
         distributionRepository.save(distribution);
 
+        // 2. Recalculate balances
+        // Recalculate for the DGM (who loses applications)
         recalculateBalanceForEmployee(dgmUserId, formDto.getAcademicYearId(), dgmUserTypeId, dgmUserId);
+        
+        // Recalculate for the PRO Employee (who gains applications). 
+        // This correctly handles the creation of a new BalanceTrack record if none exists.
         recalculateBalanceForEmployee(proEmployeeId, formDto.getAcademicYearId(), formDto.getIssuedToId(), dgmUserId);
     }
 
@@ -571,40 +588,44 @@ public class CampusService {
     }
 
  // REVISED recalculateBalanceForEmployee for CampusService
+ // REVISED recalculateBalanceForEmployee in DgmService
     private void recalculateBalanceForEmployee(int employeeId, int academicYearId, int typeId, int createdBy) {
+        
+        // Finds existing BalanceTrack or creates a new one.
+        // If new, createNewBalanceTrack returns an object with appFrom/appTo set to 0.
         BalanceTrack balance = balanceTrackRepository.findBalanceTrack(academicYearId, employeeId)
                 .orElseGet(() -> createNewBalanceTrack(employeeId, academicYearId, typeId, createdBy));
 
-        // 1. Total Applications Received by this employee (all active distributions issued TO them)
+        // 1. Total Applications Received by this employee
         Integer totalReceived = distributionRepository.sumTotalAppCountByIssuedToEmpId(employeeId, academicYearId).orElse(0);
 
-        // 2. Total Applications Distributed/Issued BY this employee (all active distributions created BY them)
+        // 2. Total Applications Distributed/Issued BY this employee
         Integer totalDistributed = distributionRepository.sumTotalAppCountByCreatedBy(employeeId, academicYearId).orElse(0);
 
         // 3. Available balance is Received - Distributed
         int availableCount = totalReceived - totalDistributed;
 
-        // 4. Calculate current min/max range of received
+        // 4. Calculate current min/max range of received (Crucial: queries the Distribution table)
         Integer minReceived = distributionRepository.findMinAppStartNoByIssuedToEmpIdAndAcademicYearId(employeeId, academicYearId).orElse(0);
         Integer maxReceived = distributionRepository.findMaxAppEndNoByIssuedToEmpIdAndAcademicYearId(employeeId, academicYearId).orElse(0);
 
-        // 5. Find the maximum end number the employee has distributed (issued BY them)
-        // We check for null/0 to prevent errors if no distributions have occurred yet.
+        // 5. Find the maximum end number the employee has distributed
         Integer maxDistributed = distributionRepository.findMaxAppEndNoByCreatedByAndAcademicYearId(employeeId, academicYearId).orElse(0);
 
-        // 6. Adjust the available range
-        if (maxDistributed > 0 && maxDistributed >= minReceived && maxDistributed < maxReceived) {
-            balance.setAppFrom(maxDistributed + 1); // start from next available
+        // 6. Adjust the available range (overwrites the 0/0 placeholder if new)
+        if (maxDistributed != null && maxDistributed >= minReceived && maxDistributed < maxReceived) {
+            // Employee has distributed some: AppFrom starts from the next number after the last distributed one
+            balance.setAppFrom(maxDistributed + 1); 
             balance.setAppTo(maxReceived);
         } else {
-            // If nothing distributed or distributed range is outside the received range,
-            // the available range is the total received range.
+            // Employee has distributed none: AppFrom/AppTo is the entire received range
             balance.setAppFrom(minReceived);
             balance.setAppTo(maxReceived);
         }
 
         balance.setAppAvblCnt(availableCount);
-        balanceTrackRepository.save(balance);
+        // This save operation persists the calculated, non-zero appFrom/appTo values.
+        balanceTrackRepository.save(balance); 
     }
 
     private void mapDtoToDistribution(Distribution distribution, DgmToCampusFormDTO formDto, int dgmUserTypeId) {

@@ -15,7 +15,7 @@ public class FormSubmissionDTO {
     private int dgmEmployeeId; // The ID of the specific DGM employee selected
     
     // The BalanceTrack ID of the range the Zonal Officer is distributing from
-    private int selectedBalanceTrackId;
+    private Integer selectedBalanceTrackId;
     
     private String applicationNoFrom;
     private String applicationNoTo;

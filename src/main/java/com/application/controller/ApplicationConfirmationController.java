@@ -20,6 +20,7 @@ import com.application.dto.CampusDropdownDTO;
 import com.application.dto.OccupationSectorDropdownDTO;
 import com.application.dto.OrientationBatchDetailsDTO;
 import com.application.dto.OrientationDropdownDTO;
+import com.application.dto.OrientationFeeDTO;
 import com.application.dto.StudentConfirmationDTO;
 import com.application.entity.BloodGroup;
 import com.application.entity.ConcessionReason;
@@ -534,5 +535,39 @@ public class ApplicationConfirmationController {
                     .body(ApiResponse.error("An unexpected error occurred: " + e.getMessage()));
         }
     }
+    
+    
+    @GetMapping("/orientation-fee")
+    public ResponseEntity<ApiResponse<OrientationFeeDTO>> getOrientationFee(
+            @RequestParam Integer orientationId) {
+        try {
+            if (orientationId == null) {
+                 return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("orientationId parameter is required."));
+            }
+            // Call the new service method
+            Optional<OrientationFeeDTO> feeOpt = confirmationService.getOrientationFeeById(orientationId);
+ 
+            if (feeOpt.isPresent()) {
+                 return ResponseEntity.ok(
+                    ApiResponse.success(feeOpt.get(), "Orientation fee fetched successfully.")
+                 );
+            } else {
+                 // Return success with null data if no fee found, or 404? Let's return success with null.
+                 // This handles cases where orientation exists but might not have fee data in the view yet.
+                  return ResponseEntity.ok(
+                    ApiResponse.success(null, "No fee details found for Orientation ID: " + orientationId)
+                  );
+                 // Alternatively, return 404:
+                 // return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                 //   .body(ApiResponse.error("Fee details not found for Orientation ID: " + orientationId));
+            }
+        } catch (Exception e) {
+             e.printStackTrace(); // Log stack trace
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch orientation fee: " + e.getMessage()));
+        }
+    }
+ 
 
 }

@@ -19,5 +19,8 @@ public interface CampusDetailsRepository extends JpaRepository<CampusDetails, In
 	        @Param("campusId") int campusId,
 	        @Param("academicYearId") int academicYearId
 	    );
+	 
+	 Optional<CampusDetails> findByCampusCampusIdAndAcademicYearAcdcYearId(int campusId, int academicYearId);
+	 
 
 }

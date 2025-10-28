@@ -13,7 +13,7 @@ import com.application.entity.AppStatusTrackView;
 @Repository
 public interface AppStatusTrackViewRepository extends JpaRepository<AppStatusTrackView, Integer>{
 	
-	Optional<AppStatusTrackView> findByNum(int num);
+	Optional<AppStatusTrackView> findByNum(Long num);
 	@Query("SELECT a FROM AppStatusTrackView a WHERE a.cmps_id = :cmpsId")
     List<AppStatusTrackView> findByCmps_id(@Param("cmpsId") int cmpsId);
 	

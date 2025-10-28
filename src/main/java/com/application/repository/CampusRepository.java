@@ -3,6 +3,7 @@ package com.application.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -47,4 +48,9 @@ public interface CampusRepository extends JpaRepository<Campus, Integer>{
 	           "WHERE UPPER(bt.businessTypeName) = UPPER(:businessTypeName) AND c.isActive = 1 " +
 	           "ORDER BY c.campusName ASC")
 	    List<CampusDropdownDTO> findActiveCampusesByBusinessTypeName(@Param("businessTypeName") String businessTypeName);
+	 
+	 @Override
+	 @EntityGraph(attributePaths = {"zone", "state", "businessType"}, 
+	              type = EntityGraph.EntityGraphType.LOAD)
+	 Optional<Campus> findById(Integer id);
 }

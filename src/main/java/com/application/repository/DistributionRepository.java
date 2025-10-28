@@ -76,35 +76,35 @@ public interface DistributionRepository extends JpaRepository<Distribution, Inte
 			+ "AND d.appStartNo <= :endNo AND d.appEndNo >= :startNo AND d.isActive = 1")
 	List<Distribution> findOverlappingDistributions(@Param("academicYearId") int academicYearId,
 			@Param("startNo") int startNo, @Param("endNo") int endNo);
-	
+
 	@Query("SELECT d FROM Distribution d WHERE :admissionNo >= d.appStartNo AND :admissionNo <= d.appEndNo AND d.issuedToType.appIssuedId = 4 AND d.isActive = 1")
-    Optional<Distribution> findProDistributionForAdmissionNumber(@Param("admissionNo") long admissionNo);
-	
+	Optional<Distribution> findProDistributionForAdmissionNumber(@Param("admissionNo") long admissionNo);
+
 	@Query("SELECT MAX(d.appEndNo) FROM Distribution d WHERE d.created_by = :employeeId AND d.academicYear.acdcYearId = :academicYearId AND d.isActive = 1")
 	Optional<Integer> findMaxAppEndNoByCreatedByAndAcademicYearId(@Param("employeeId") int employeeId,
-	                                                              @Param("academicYearId") int academicYearId);
-	
-	
-	@Query("SELECT new com.application.dto.AppDistributionDTO(d.appStartNo, d.appEndNo) " +
-	           "FROM Distribution d " +
-	           "WHERE d.issued_to_emp_id = :issuedToEmpId " + 
-	           "AND d.academicYear.acdcYearId = :academicYearId " +
-	           "AND d.isActive = 1")
-	    Optional<AppDistributionDTO> findActiveAppRangeByEmployeeAndAcademicYear(
-	            @Param("issuedToEmpId") int issuedToEmpId,
-	            @Param("academicYearId") int academicYearId);
-	
-	@Query("SELECT MAX(d.appEndNo) + 1 FROM Distribution d " +
-	           "WHERE d.academicYear.acdcYearId = :academicYearId " +
-	           "AND d.state.stateId = :stateId " +
-	           "AND d.issuedByType.appIssuedId = 1 " + // Issued By Type ID must be 1
-	           "AND d.isActive = 1")
-	    Optional<Integer> findNextStartNumberByStateAndIssuerType(
-	        @Param("academicYearId") int academicYearId,
-	        @Param("stateId") int stateId);
+			@Param("academicYearId") int academicYearId);
 
-	    // RENAMED METHOD: Finds the maximum App End No in a state's active distributions, 
-	    // regardless of the issuer type (since the restrictive filter was removed).
+	@Query("SELECT new com.application.dto.AppDistributionDTO(d.appStartNo, d.appEndNo) " + "FROM Distribution d "
+			+ "WHERE d.issued_to_emp_id = :issuedToEmpId " + "AND d.academicYear.acdcYearId = :academicYearId "
+			+ "AND d.isActive = 1")
+	Optional<AppDistributionDTO> findActiveAppRangeByEmployeeAndAcademicYear(@Param("issuedToEmpId") int issuedToEmpId,
+			@Param("academicYearId") int academicYearId);
+
+	@Query("SELECT new com.application.dto.AppDistributionDTO(d.appStartNo, d.appEndNo) " + "FROM Distribution d "
+			+ "WHERE d.issued_to_emp_id = :issuedToEmpId " + "AND d.academicYear.acdcYearId = :academicYearId "
+			+ "AND d.isActive = 1 " + "AND (:cityId IS NULL OR d.city.id = :cityId)") // Added conditional cityId filter
+	Optional<AppDistributionDTO> findActiveAppRangeByEmployeeAndAcademicYear(@Param("issuedToEmpId") int issuedToEmpId,
+			@Param("academicYearId") int academicYearId, @Param("cityId") Integer cityId); // Added cityId parameter
+
+	@Query("SELECT MAX(d.appEndNo) + 1 FROM Distribution d " + "WHERE d.academicYear.acdcYearId = :academicYearId "
+			+ "AND d.state.stateId = :stateId " + "AND d.issuedByType.appIssuedId = 1 " + // Issued By Type ID must be 1
+			"AND d.isActive = 1")
+	Optional<Integer> findNextStartNumberByStateAndIssuerType(@Param("academicYearId") int academicYearId,
+			@Param("stateId") int stateId);
+
+	// RENAMED METHOD: Finds the maximum App End No in a state's active
+	// distributions,
+	// regardless of the issuer type (since the restrictive filter was removed).
 //	    @Query("SELECT MAX(d.appEndNo) + 1 FROM Distribution d " +
 //	           "WHERE d.academicYear.acdcYearId = :academicYearId " +
 //	           "AND d.state.stateId = :stateId " + 
@@ -112,23 +112,18 @@ public interface DistributionRepository extends JpaRepository<Distribution, Inte
 //	    Optional<Integer> findMaxAppEndNoByAcademicYearAndState( // New method name
 //	        @Param("academicYearId") int academicYearId,
 //	        @Param("stateId") int stateId);
-	
-	@Query("SELECT MAX(d.appEndNo) + 1 FROM Distribution d " +
-	           "WHERE d.academicYear.acdcYearId = :academicYearId " +
-	           "AND d.state.stateId = :stateId " + 
-	           "AND d.issuedByType.appIssuedId = 1 " +
-	           "AND d.isActive = 1")
-	    Optional<Integer> findMaxAppEndNoByAcademicYearAndState(
-	        @Param("academicYearId") int academicYearId,
-	        @Param("stateId") int stateId);
-	
-	
-	 @Query("SELECT d FROM Distribution d " +
-	           "WHERE :admissionNo BETWEEN d.appStartNo AND d.appEndNo " +
-	           "AND d.issuedToType.appIssuedId = :issuedToTypeId " +
-	           "AND d.isActive = 1")
-	    List<Distribution> findByAdmissionNoRangeAndIssuedToType(@Param("admissionNo") int admissionNo,
-	                                                            @Param("issuedToTypeId") int issuedToTypeId);
-	
+
+	@Query("SELECT MAX(d.appEndNo) + 1 FROM Distribution d " + "WHERE d.academicYear.acdcYearId = :academicYearId "
+			+ "AND d.state.stateId = :stateId " + "AND d.issuedByType.appIssuedId = 1 " + "AND d.isActive = 1")
+	Optional<Integer> findMaxAppEndNoByAcademicYearAndState(@Param("academicYearId") int academicYearId,
+			@Param("stateId") int stateId);
+
+	@Query("SELECT d FROM Distribution d " + "WHERE :admissionNo BETWEEN d.appStartNo AND d.appEndNo "
+			+ "AND d.issuedToType.appIssuedId = :issuedToTypeId " + "AND d.isActive = 1")
+	List<Distribution> findByAdmissionNoRangeAndIssuedToType(@Param("admissionNo") int admissionNo,
+			@Param("issuedToTypeId") int issuedToTypeId);
+
+	@Query("SELECT d FROM Distribution d WHERE :applicationNo BETWEEN d.appStartNo AND d.appEndNo AND d.isActive = 1")
+	Optional<Distribution> findActiveByApplicationNoInRange(@Param("applicationNo") int applicationNo);
 
 }

@@ -29,7 +29,12 @@ import com.application.dto.PaymentDetailsDTO;
 import com.application.dto.PinCodeLocationDTO;
 import com.application.dto.StudentAdmissionDTO;
 import com.application.dto.StudentSaleDTO;
+import com.application.entity.AcademicYear;
+import com.application.entity.AppStatusTrackView;
+import com.application.entity.BalanceTrack;
+import com.application.entity.BusinessType;
 import com.application.entity.Campus;
+import com.application.entity.CampusDetails;
 import com.application.entity.CmpsOrientation;
 import com.application.entity.CmpsOrientationBatchFeeView;
 import com.application.entity.Distribution;
@@ -46,8 +51,11 @@ import com.application.entity.StudentOrientationDetails;
 import com.application.entity.StudentPersonalDetails;
 import com.application.entity.StudentRelation;
 import com.application.entity.StudyType;
+import com.application.entity.Zone;
 import com.application.repository.AcademicYearRepository;
 import com.application.repository.AdmissionTypeRepository;
+import com.application.repository.AppStatusTrackViewRepository;
+import com.application.repository.BalanceTrackRepository;
 import com.application.repository.BloodGroupRepository;
 import com.application.repository.CampusDetailsRepository;
 import com.application.repository.CampusRepository;
@@ -97,6 +105,7 @@ import com.application.repository.StudentPersonalDetailsRepository;
 import com.application.repository.StudentRelationRepository;
 import com.application.repository.StudentTypeRepository;
 import com.application.repository.StudyTypeRepository;
+import com.application.repository.ZoneRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -169,6 +178,9 @@ public class StudentAdmissionService {
     @Autowired private StateAppRepository stateAppRepository;
     @Autowired private DistributionRepository distributionRepository;
     @Autowired private StudentOrientationDetailsRepository orientationDetailsRepo;
+    @Autowired private AppStatusTrackViewRepository appStatusTrackViewRepository;
+    @Autowired private ZoneRepository zonerepo;
+    @Autowired private BalanceTrackRepository balanceTrackRepository;
 
 
     StudentAdmissionService(CampusDetailsRepository campusDetailsRepository) {
@@ -409,79 +421,123 @@ public class StudentAdmissionService {
                 .orElseThrow(() -> new RuntimeException("Campus not found for ID: " + campusId));
     }
     
- // College / General Admission
-    public CampusAndZoneDTO getCampusZoneYearAndFeeByAdmissionNo(Long admissionNo) {
-        return academicDetailsRepo.findByStudAdmsNo(admissionNo).map(student -> {
-            CampusAndZoneDTO dto = new CampusAndZoneDTO();
-
-            // Campus & Zone
-            if (student.getCampus() != null) {
-                dto.setCampusId(student.getCampus().getCampusId());
-                dto.setCampusName(student.getCampus().getCampusName());
-                if (student.getCampus().getZone() != null) {
-                    dto.setZoneId(student.getCampus().getZone().getZoneId());
-                    dto.setZoneName(student.getCampus().getZone().getZoneName());
-                }
-            }
-
-            // Academic Year from StudentAcademicDetails
-            if (student.getAcademicYear() != null) {
-                dto.setAcademicYearId(student.getAcademicYear().getAcdcYearId());
-                dto.setAcademicYear(student.getAcademicYear().getAcademicYear());
-            }
-
-            // Application Fee from StateApp (if needed)
-            List<StateApp> stateApps = stateAppRepository.findAllByAdmissionNoBetweenRange(
-                    student.getStudAdmsNo().intValue()
-            );
-            if (!stateApps.isEmpty()) {
-                dto.setApplicationFee(stateApps.get(0).getAmount());
-            }
-
-            return dto;
-        }).orElse(null);
-    }
-
-    // School
-    public CampusAndZoneDTO getCampusZoneYearAndFeeForSchool(Long admissionNo) {
-        return academicDetailsRepo.findByStudAdmsNo(admissionNo).map(student -> {
-            CampusAndZoneDTO dto = new CampusAndZoneDTO();
-
-            // 1️⃣ Campus & Zone
-            if (student.getCampus() != null) {
-                dto.setCampusId(student.getCampus().getCampusId());
-                dto.setCampusName(student.getCampus().getCampusName());
-                if (student.getCampus().getZone() != null) {
-                    dto.setZoneId(student.getCampus().getZone().getZoneId());
-                    dto.setZoneName(student.getCampus().getZone().getZoneName());
-                }
-            }
-
-            // 2️⃣ Academic Year from StudentAcademicDetails
-            if (student.getAcademicYear() != null) {
-                dto.setAcademicYearId(student.getAcademicYear().getAcdcYearId());
-                dto.setAcademicYear(student.getAcademicYear().getAcademicYear());
-            }
-
-            // 3️⃣ Application Fee from Distribution
-            List<Distribution> distributions = distributionRepository
-                .findByAdmissionNoRangeAndIssuedToType(student.getStudAdmsNo().intValue(), 4);
-
-            if (!distributions.isEmpty()) {
-                Distribution dist = distributions.get(0);
-
-                // Match campusId in CampusDetails to get app_fee
-                if (dist.getCampus() != null) {
-                    int campusId = dist.getCampus().getCampusId();
-                    campusDetailsRepository.findById(campusId)
-                        .ifPresent(campusDetails -> dto.setApplicationFee(campusDetails.getApp_fee()));
-                }
-            }
-
-            return dto;
-        }).orElse(null);
-    }
-    
+    @Transactional(readOnly = true)
+	public CampusAndZoneDTO getApplicationDetailsWithFee(long applicationNo) {
+		logger.info("Fetching details with fee for Application No: {}", applicationNo);
+ 
+		// 1. Fetch from AppStatusTrackView
+		AppStatusTrackView statusTrack = appStatusTrackViewRepository.findByNum(applicationNo).orElseThrow(
+				() -> new EntityNotFoundException("Application status not found for No: " + applicationNo));
+ 
+		Integer campusId = statusTrack.getCmps_id();
+		String campusName = statusTrack.getCmps_name();
+		String zoneName = statusTrack.getZone_name();
+ 
+		if (campusId == null) {
+			logger.error("Campus ID is null in status track for App No: {}", applicationNo);
+			throw new EntityNotFoundException("Campus ID not found in status track for App No: " + applicationNo);
+		}
+		logger.debug("Found Status Track: CampusId={}, CampusName='{}', ZoneName='{}'", campusId, campusName, zoneName);
+ 
+		// 2. Fetch Zone ID using Zone Name
+		Integer zoneId = getZoneIdByName(zoneName);
+ 
+		// 3. Fetch Campus to get Business Type
+		Campus campus = campusRepo.findById(campusId)
+				.orElseThrow(() -> new EntityNotFoundException("Campus entity not found for ID: " + campusId));
+ 
+		BusinessType businessType = campus.getBusinessType();
+		if (businessType == null) {
+			logger.error("Business Type is not linked for Campus ID: {}", campusId);
+			throw new EntityNotFoundException("Business Type not linked for Campus ID: " + campusId);
+		}
+		String businessTypeName = businessType.getBusinessTypeName();
+		logger.debug("Found Campus: BusinessType='{}'", businessTypeName);
+ 
+		// --- 4. MODIFIED: Fetch Academic Year from BalanceTrack ---
+		logger.debug("Fetching Academic Year from BalanceTrack for App No: {}", applicationNo);
+		BalanceTrack balanceTrack = balanceTrackRepository.findActiveBalanceTrackByAppNoRange(applicationNo)
+				.orElseThrow(() -> new EntityNotFoundException("BalanceTrack record covering Application No: "
+						+ applicationNo + " not found. Cannot determine Academic Year."));
+ 
+		AcademicYear academicYear = balanceTrack.getAcademicYear();
+		if (academicYear == null) {
+			logger.error("Academic Year is null in balance track record for App No: {}", applicationNo);
+			throw new EntityNotFoundException(
+					"Academic Year not linked for BalanceTrack covering App No: " + applicationNo);
+		}
+		Integer academicYearId = academicYear.getAcdcYearId();
+		String academicYearString = academicYear.getAcademicYear();
+		logger.debug("Found BalanceTrack: AcademicYearId={}, AcademicYear='{}'", academicYearId, academicYearString);
+		// --- END MODIFICATION ---
+ 
+		// 5. Determine Application Fee based on Business Type (using academicYearId
+		// from BalanceTrack)
+		Float applicationFee = null;
+		if ("SCHOOL".equalsIgnoreCase(businessTypeName)) {
+			// SCHOOL logic remains the same (uses campusId and academicYearId)
+			logger.debug("Business type is SCHOOL. Fetching fee from CampusDetails...");
+			Optional<CampusDetails> campusDetailsOpt = campusDetailsRepository
+					.findByCampusCampusIdAndAcademicYearAcdcYearId(campusId, academicYearId);
+			if (campusDetailsOpt.isPresent()) {
+				applicationFee = campusDetailsOpt.get().getApp_fee();
+				logger.debug("Found fee in CampusDetails: {}", applicationFee);
+			} else {
+				logger.warn(
+						"CampusDetails record not found for SCHOOL campusId={}, academicYearId={}. Application fee will be null.",
+						campusId, academicYearId);
+			}
+		} else if ("COLLEGE".equalsIgnoreCase(businessTypeName)) {
+			// COLLEGE logic now uses academicYearId derived from BalanceTrack
+			logger.debug("Business type is COLLEGE. Fetching fee from StateApp using academicYearId {}...",
+					academicYearId);
+			Optional<StateApp> stateAppOpt = stateAppRepository.findStateAppByAppNoRangeAndAcademicYear(applicationNo,
+					academicYearId);
+			if (stateAppOpt.isPresent()) {
+				applicationFee = stateAppOpt.get().getAmount();
+				logger.debug("Found fee (amount) in StateApp: {}", applicationFee);
+			} else {
+				logger.warn(
+						"StateApp record not found for COLLEGE appNo range including {} and academicYearId={}. Application fee will be null.",
+						applicationNo, academicYearId);
+			}
+		} else {
+			logger.warn("Unhandled Business Type '{}' for Campus ID: {}. Cannot determine application fee.",
+					businessTypeName, campusId);
+		}
+ 
+		// 6. Build and return the final DTO
+		CampusAndZoneDTO resultDTO = new CampusAndZoneDTO();
+		resultDTO.setCampusId(campusId);
+		resultDTO.setCampusName(campusName);
+		resultDTO.setZoneId(zoneId);
+		resultDTO.setZoneName(zoneName);
+		resultDTO.setAcademicYearId(academicYearId);
+		resultDTO.setAcademicYear(academicYearString);
+		resultDTO.setApplicationFee(applicationFee);
+ 
+		logger.info("Successfully fetched details with fee for Application No: {}", applicationNo);
+		return resultDTO;
+	}
+ 
+	// --- Helper method to cache Zone lookup by name (No changes needed here) ---
+ 
+	public Integer getZoneIdByName(String zoneName) {
+		if (zoneName == null || zoneName.isBlank()) {
+			logger.debug("Zone name provided is blank or null.");
+			return null;
+		}
+		logger.debug("Looking up Zone ID for name: '{}'", zoneName);
+		Optional<Zone> zoneOpt = zonerepo.findByZoneNameIgnoreCase(zoneName); // Uses updated repo method
+ 
+		if (zoneOpt.isEmpty()) {
+			logger.warn("Zone entity not found for name: {}", zoneName);
+			return null;
+		} else {
+			logger.debug("Found Zone ID: {}", zoneOpt.get().getZoneId());
+			return zoneOpt.get().getZoneId();
+		}
+	}
  
     public List<ConcessionTypeDTO> getConcessionTypesByNames(List<String> concTypes) {
         return concessionTypeRepo.findConcessionTypesByNames(concTypes);

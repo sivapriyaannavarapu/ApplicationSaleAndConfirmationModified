@@ -52,6 +52,17 @@ public interface StateAppRepository extends JpaRepository<StateApp, Integer> {
     
     @Query("SELECT s FROM StateApp s WHERE :admissionNo BETWEEN s.app_start_no AND s.app_end_no")
     Optional<StateApp> findByAdmissionNoInRange(@Param("admissionNo") Long admissionNo);
+    
+ // In StateAppRepository.java
+
+ // In StateAppRepository.java
+
+    @Query("SELECT sa FROM StateApp sa WHERE :appNo BETWEEN sa.app_start_no AND sa.app_end_no AND sa.academicYear.acdcYearId = :academicYearId")
+    Optional<StateApp> findStateAppByAppNoRangeAndAcademicYear(
+            @Param("appNo") Long appNo,
+            @Param("academicYearId") int academicYearId);
+
+
 
 
     
