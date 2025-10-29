@@ -350,5 +350,4 @@ public class DistributionGet {
 	        // Return the list with HTTP 200 OK
 	        return ResponseEntity.ok(dgmEmployees);
 	    }
-	    
 }

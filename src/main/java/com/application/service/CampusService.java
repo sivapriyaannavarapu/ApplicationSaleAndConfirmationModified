@@ -294,6 +294,8 @@ import com.application.dto.GenericDropdownDTO;
 import com.application.entity.*;
 import com.application.repository.*;
 import lombok.NonNull;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -317,6 +319,9 @@ public class CampusService {
     private final EmployeeRepository employeeRepository;
     private final BalanceTrackRepository balanceTrackRepository;
     private final CampusProViewRepository campusProViewRepository;
+    
+    @Autowired
+    UserAdminViewRepository userAdminViewRepository;
 
     public CampusService(AcademicYearRepository academicYearRepository, StateRepository stateRepository,
                          DistrictRepository districtRepository, CityRepository cityRepository,
@@ -445,8 +450,37 @@ public List<GenericDropdownDTO> getEmployeeDropdownByCampus(int campusId) {
                 .toList();
     }
 
-    private int getDgmUserTypeId() {
-        return 3; // Example: DGM
+    private int getDgmUserTypeId(int userId) { 
+    	// NOTE: Ensure UserAdminViewRepository has the findByEmpIdUsingQuery method implemented
+    	List<UserAdminView> userRoles = userAdminViewRepository.findByEmpIdUsingQuery(userId);
+
+        if (userRoles.isEmpty()) {
+            throw new RuntimeException("Issuer details not found for employee ID: " + userId + ". Cannot determine role.");
+        }
+        
+        int highestPriorityTypeId = Integer.MAX_VALUE;
+
+        for (UserAdminView userView : userRoles) {
+            String roleName = userView.getRole_name();
+            String normalizedRoleName = roleName.toUpperCase().trim();
+            
+            int currentTypeId = switch (normalizedRoleName) {
+                case "ADMIN" -> 1;
+                case "ZONAL ACCOUNTANT" -> 2;
+                case "DGM" -> 3;
+                default -> -1; // Ignore unsupported roles
+            };
+
+            if (currentTypeId != -1 && currentTypeId < highestPriorityTypeId) {
+                highestPriorityTypeId = currentTypeId;
+            }
+        }
+
+        if (highestPriorityTypeId == Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Employee ID: " + userId + " holds roles, but none are authorized to issue applications.");
+        }
+        
+        return highestPriorityTypeId;
     }
 
     // --- FORM SUBMISSION / UPDATE METHODS with cache eviction ---
@@ -460,7 +494,7 @@ public List<GenericDropdownDTO> getEmployeeDropdownByCampus(int campusId) {
     public void submitDgmToCampusForm(@NonNull DgmToCampusFormDTO formDto) {
         int dgmUserId = formDto.getUserId();
         int proEmployeeId = formDto.getProEmployeeId();
-        int dgmUserTypeId = getDgmUserTypeId(); // Assuming this helper exists and works
+        int dgmUserTypeId = getDgmUserTypeId(dgmUserId); // Assuming this helper exists and works
 
         // The commented-out overlapping distribution logic is safe to keep commented 
         // out if that feature is not required for the DGM -> PRO transfer.
@@ -509,7 +543,7 @@ public List<GenericDropdownDTO> getEmployeeDropdownByCampus(int campusId) {
 
         // 2. Insert new record for the requested range (ONE new record)
         Distribution newRequestedDistribution = new Distribution();
-        mapDtoToDistribution(newRequestedDistribution, formDto, getDgmUserTypeId());
+        mapDtoToDistribution(newRequestedDistribution, formDto, getDgmUserTypeId(dgmUserId));
         distributionRepository.save(newRequestedDistribution);
 
         // 3. Handle the remainder (only if the range changed)
@@ -538,7 +572,7 @@ public List<GenericDropdownDTO> getEmployeeDropdownByCampus(int campusId) {
         
 
         // 4. Recalculate Balances
-        int dgmUserTypeId = getDgmUserTypeId();
+        int dgmUserTypeId = getDgmUserTypeId(dgmUserId);
         recalculateBalanceForEmployee(dgmUserId, academicYearId, dgmUserTypeId, dgmUserId); // Issuer (DGM)
         recalculateBalanceForEmployee(formDto.getProEmployeeId(), academicYearId, formDto.getIssuedToId(), dgmUserId); // New Receiver (PRO)
 

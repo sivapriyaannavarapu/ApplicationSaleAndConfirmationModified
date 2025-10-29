@@ -302,6 +302,7 @@ import com.application.dto.GenericDropdownDTO;
 import com.application.entity.BalanceTrack;
 import com.application.entity.Campus;
 import com.application.entity.Distribution;
+import com.application.entity.UserAdminView;
 import com.application.entity.Zone;
 import com.application.repository.AcademicYearRepository;
 import com.application.repository.AppIssuedTypeRepository;
@@ -311,6 +312,7 @@ import com.application.repository.CityRepository;
 import com.application.repository.DgmRepository;
 import com.application.repository.DistributionRepository;
 import com.application.repository.EmployeeRepository;
+import com.application.repository.UserAdminViewRepository;
 import com.application.repository.ZoneRepository;
 
 import lombok.NonNull;
@@ -329,6 +331,7 @@ public class DgmService {
     private final EmployeeRepository employeeRepository;
     private final BalanceTrackRepository balanceTrackRepository;
     private final DgmRepository dgmRepository;
+    private final UserAdminViewRepository userAdminViewRepository;
 
     // --- Dropdown and Helper Methods with Caching ---
 //    @Cacheable("academicYears")
@@ -498,8 +501,42 @@ public class DgmService {
     
 
     private int getIssuedTypeByUserId(int userId) {
-        // Example logic: return issuer type ID
-        return 2; // Zonal Officer (Assuming the DGM is acting in a Zonal Officer capacity or similar)
+    	List<UserAdminView> userRoles = userAdminViewRepository.findByEmpIdUsingQuery(userId);
+
+        if (userRoles.isEmpty()) {
+            throw new RuntimeException("Issuer details not found for employee ID: " + userId + ". Cannot determine role.");
+        }
+        
+        // 2. Define the priority mapping and find the highest one (lowest ID)
+        int highestPriorityTypeId = Integer.MAX_VALUE;
+        String highestPriorityRoleName = null;
+
+        for (UserAdminView userView : userRoles) {
+            String roleName = userView.getRole_name();
+            String normalizedRoleName = roleName.toUpperCase().trim();
+            
+            int currentTypeId = switch (normalizedRoleName) {
+                case "ADMIN" -> 1;
+                case "ZONAL ACCOUNTANT" -> 2;
+                case "DGM" -> 3;
+                default -> -1; // Ignore unsupported roles for distribution purposes
+            };
+
+            // 3. Select the role with the lowest Type ID (1 is highest priority)
+            if (currentTypeId != -1 && currentTypeId < highestPriorityTypeId) {
+                highestPriorityTypeId = currentTypeId;
+                highestPriorityRoleName = roleName; // For logging/debugging if needed
+            }
+        }
+
+        // 4. Final check and return
+        if (highestPriorityTypeId == Integer.MAX_VALUE) {
+            // This means the user had roles, but none of them were Admin, Zonal Accountant, or DGM.
+            throw new IllegalArgumentException("Employee ID: " + userId + " holds roles, but none are authorized to issue applications.");
+        }
+        
+        // Return the ID of the highest priority role found (1, 2, or 3)
+        return highestPriorityTypeId;
     }
 
     // ----------------------------------------
