@@ -466,6 +466,9 @@ public class ApplicationNewConfirmationService {
                 if (concDto.getReasonId() != null) {
                     concessionReasonRepo.findById(concDto.getReasonId()).ifPresent(concession::setConcessionReason);
                 }
+                
+                concession.setConc_referred_by(concDto.getConcReferedBy());
+                
                 if (concDto.getGivenById() != null) {
                     concession.setConc_issued_by(concDto.getGivenById()); 
                 }

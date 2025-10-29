@@ -32,6 +32,7 @@ public class StudentConcessionType {
 	private LocalDateTime created_Date;
 	private int created_by;
 	private String comments;
+	private int conc_referred_by;
 
 	@ManyToOne
 	@JoinColumn(name = "conc_type_id")
