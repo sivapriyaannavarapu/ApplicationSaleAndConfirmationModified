@@ -279,6 +279,7 @@ public class ApplicationNewConfirmationService {
         student.setApp_conf_date(dto.getAppConfDate()); 
         student.setPre_school_name(dto.getSchoolName());
         student.setScore_app_no(dto.getScoreAppNo());
+        student.setIs_active(1);
         
         if(dto.getMarks() != null) {
             student.setScore_marks(dto.getMarks());

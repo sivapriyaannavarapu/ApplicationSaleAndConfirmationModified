@@ -114,7 +114,7 @@ public interface DistributionRepository extends JpaRepository<Distribution, Inte
 //	        @Param("stateId") int stateId);
 
 	@Query("SELECT MAX(d.appEndNo) + 1 FROM Distribution d " + "WHERE d.academicYear.acdcYearId = :academicYearId "
-			+ "AND d.state.stateId = :stateId " + "AND d.issuedByType.appIssuedId = 1 " + "AND d.isActive = 1")
+			+ "AND d.state.stateId = :stateId " + "AND d.issuedByType.appIssuedId IN (1, 2, 3) " + "AND d.isActive = 1")
 	Optional<Integer> findMaxAppEndNoByAcademicYearAndState(@Param("academicYearId") int academicYearId,
 			@Param("stateId") int stateId);
 
