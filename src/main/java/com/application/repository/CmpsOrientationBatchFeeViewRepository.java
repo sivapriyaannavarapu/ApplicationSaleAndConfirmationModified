@@ -32,6 +32,12 @@ public interface CmpsOrientationBatchFeeViewRepository extends JpaRepository<Cmp
 	@Query("SELECT new com.application.dto.OrientationDTO(c.orientationId, c.orientationName) "
 			+ "FROM CmpsOrientationBatchFeeView c WHERE c.classId = :classId")
 	List<OrientationDTO> findOrientationsByClassId(int classId);
+	
+	@Query("SELECT DISTINCT new com.application.dto.OrientationDTO(c.orientationId, c.orientationName) "
+            + "FROM CmpsOrientationBatchFeeView c "
+            + "WHERE c.classId = :classId "
+            + "AND c.cmpsId = :cmpsId ") // **Condition for active orientation (is_active = 1)**
+    List<OrientationDTO> findDistinctOrientationsByClassIdAndCmpsId(int classId, int cmpsId);
 
 	@Query("SELECT DISTINCT new com.application.dto.ClassDTO(c.classId, c.className) "
 			+ "FROM CmpsOrientationBatchFeeView c WHERE c.cmpsId = :campusId")

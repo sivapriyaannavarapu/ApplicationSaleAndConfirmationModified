@@ -27,4 +27,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Integer> {
 			+ "    CONCAT(e.first_name, ' ', e.last_name) " + ") " + "FROM Employee e "
 			+ "WHERE e.emp_id IN :employeeIds")
 	List<GenericDropdownDTO> findEmployeesByIdsAsDropdown(@Param("employeeIds") List<Integer> employeeIds);
+	
+	List<Employee> findByIsActive(int is_active);
 }

@@ -15,4 +15,5 @@ public class CampusAndZoneDTO {
     private Integer academicYearId;
     private String academicYear;
     private Float applicationFee;
+    private Float amount;
 }

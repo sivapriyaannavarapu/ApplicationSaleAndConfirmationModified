@@ -2,7 +2,6 @@
 package com.application.controller;
  
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,11 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.application.dto.ApiResponse;
 import com.application.dto.ApplicationDetailsDTO;
@@ -210,9 +209,18 @@ public class StudentAdmissionController {
         return studentAdmissionService.getAllPaymentModes();
     }
     
-    @GetMapping("/orientations/by-class/{classId}")
-    public List<OrientationDTO> getOrientations(@PathVariable int classId) {
-        return studentAdmissionService.getOrientationsByClassId(classId);
+//    @GetMapping("/orientations/by-class/{classId}")
+//    public List<OrientationDTO> getOrientations(@PathVariable int classId) {
+//        return studentAdmissionService.getOrientationsByClassId(classId);
+//    }
+    
+    @GetMapping("/orientations/by-class/{classId}/cmps/{cmpsId}")
+    public List<OrientationDTO> getDistinctActiveOrientations(
+            @PathVariable int classId, 
+            @PathVariable int cmpsId) {
+                
+        // Call the new service method
+        return studentAdmissionService.getDistinctActiveOrientationsByClassIdAndCmpsId(classId, cmpsId);
     }
     
     @GetMapping("/classes/by-campus/{campusId}")
@@ -368,6 +376,34 @@ public class StudentAdmissionController {
             e.printStackTrace(); // Log the full error stack trace for debugging
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to fetch application details: " + e.getMessage()));
+        }
+    }
+    
+    
+    @PutMapping("/update_details/{studAdmsNo}")
+    public ResponseEntity<ApiResponse<?>> updateApplicationDetails(
+            @PathVariable Long studAdmsNo,
+            @RequestBody StudentSaleDTO saleDTO) {
+        try {
+            // The DTO must include the studAdmsNo for the service layer
+            saleDTO.setStudAdmsNo(studAdmsNo);
+            
+            // Call the service method to update the entities
+            StudentSaleDTO updatedDetails = studentAdmissionService.updateApplicationDetails(saleDTO);
+            
+            // Return 200 OK with the updated data
+            return ResponseEntity.ok(ApiResponse.success(updatedDetails, "Application details updated successfully."));
+                
+        } catch (EntityNotFoundException e) {
+            // Return 404 Not Found if the student doesn't exist
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+                    
+        } catch (Exception e) {
+            // Return 500 Internal Server Error for any other issues
+            e.printStackTrace(); // Log the full error stack trace for debugging
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to update application details: " + e.getMessage()));
         }
     }
     

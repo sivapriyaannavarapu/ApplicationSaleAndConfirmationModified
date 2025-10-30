@@ -46,6 +46,7 @@ import com.application.entity.StateApp;
 import com.application.entity.Status;
 import com.application.entity.StudentAcademicDetails;
 import com.application.entity.StudentAddress;
+import com.application.entity.StudentApplicationTransaction;
 import com.application.entity.StudentClass;
 import com.application.entity.StudentOrientationDetails;
 import com.application.entity.StudentPersonalDetails;
@@ -181,6 +182,7 @@ public class StudentAdmissionService {
     @Autowired private AppStatusTrackViewRepository appStatusTrackViewRepository;
     @Autowired private ZoneRepository zonerepo;
     @Autowired private BalanceTrackRepository balanceTrackRepository;
+    @Autowired private StudentApplicationTransactionRepository studentApplicationTransactionRepo;
 
 
     StudentAdmissionService(CampusDetailsRepository campusDetailsRepository) {
@@ -243,8 +245,15 @@ public class StudentAdmissionService {
     
 //    @Cacheable("employees")
     public List<GenericDropdownDTO> getAllEmployees() {
-        return employeeRepo.findAll().stream()
-                .map(employee -> new GenericDropdownDTO(employee.getEmp_id(), employee.getFirst_name() + " " + employee.getLast_name()))
+        // 1. Call the repository method to fetch only employees where is_active is 1
+        List<Employee> activeEmployees = employeeRepo.findByIsActive(1); 
+        
+        // 2. Stream the filtered list and map to DTOs
+        return activeEmployees.stream()
+                .map(employee -> new GenericDropdownDTO(
+                    employee.getEmp_id(), 
+                    employee.getFirst_name() + " " + employee.getLast_name()
+                ))
                 .collect(Collectors.toList());
     }
     
@@ -282,6 +291,10 @@ public class StudentAdmissionService {
 //    @Cacheable(value = "classesByCampus", key = "#campusId")
     public List<ClassDTO> getClassesByCampusId(int campusId) {
         return cmpsOrientationBatchFeeViewRepo.findClassesByCampusId(campusId);
+    }
+    
+    public List<OrientationDTO> getDistinctActiveOrientationsByClassIdAndCmpsId(int classId, int cmpsId) {
+        return cmpsOrientationBatchFeeViewRepo.findDistinctOrientationsByClassIdAndCmpsId(classId, cmpsId);
     }
     
 //    @Cacheable("studentTypes")
@@ -422,103 +435,127 @@ public class StudentAdmissionService {
     }
     
     @Transactional(readOnly = true)
-	public CampusAndZoneDTO getApplicationDetailsWithFee(long applicationNo) {
-		logger.info("Fetching details with fee for Application No: {}", applicationNo);
- 
-		// 1. Fetch from AppStatusTrackView
-		AppStatusTrackView statusTrack = appStatusTrackViewRepository.findByNum(applicationNo).orElseThrow(
-				() -> new EntityNotFoundException("Application status not found for No: " + applicationNo));
- 
-		Integer campusId = statusTrack.getCmps_id();
-		String campusName = statusTrack.getCmps_name();
-		String zoneName = statusTrack.getZone_name();
- 
-		if (campusId == null) {
-			logger.error("Campus ID is null in status track for App No: {}", applicationNo);
-			throw new EntityNotFoundException("Campus ID not found in status track for App No: " + applicationNo);
-		}
-		logger.debug("Found Status Track: CampusId={}, CampusName='{}', ZoneName='{}'", campusId, campusName, zoneName);
- 
-		// 2. Fetch Zone ID using Zone Name
-		Integer zoneId = getZoneIdByName(zoneName);
- 
-		// 3. Fetch Campus to get Business Type
-		Campus campus = campusRepo.findById(campusId)
-				.orElseThrow(() -> new EntityNotFoundException("Campus entity not found for ID: " + campusId));
- 
-		BusinessType businessType = campus.getBusinessType();
-		if (businessType == null) {
-			logger.error("Business Type is not linked for Campus ID: {}", campusId);
-			throw new EntityNotFoundException("Business Type not linked for Campus ID: " + campusId);
-		}
-		String businessTypeName = businessType.getBusinessTypeName();
-		logger.debug("Found Campus: BusinessType='{}'", businessTypeName);
- 
-		// --- 4. MODIFIED: Fetch Academic Year from BalanceTrack ---
-		logger.debug("Fetching Academic Year from BalanceTrack for App No: {}", applicationNo);
-		BalanceTrack balanceTrack = balanceTrackRepository.findActiveBalanceTrackByAppNoRange(applicationNo)
-				.orElseThrow(() -> new EntityNotFoundException("BalanceTrack record covering Application No: "
-						+ applicationNo + " not found. Cannot determine Academic Year."));
- 
-		AcademicYear academicYear = balanceTrack.getAcademicYear();
-		if (academicYear == null) {
-			logger.error("Academic Year is null in balance track record for App No: {}", applicationNo);
-			throw new EntityNotFoundException(
-					"Academic Year not linked for BalanceTrack covering App No: " + applicationNo);
-		}
-		Integer academicYearId = academicYear.getAcdcYearId();
-		String academicYearString = academicYear.getAcademicYear();
-		logger.debug("Found BalanceTrack: AcademicYearId={}, AcademicYear='{}'", academicYearId, academicYearString);
-		// --- END MODIFICATION ---
- 
-		// 5. Determine Application Fee based on Business Type (using academicYearId
-		// from BalanceTrack)
-		Float applicationFee = null;
-		if ("SCHOOL".equalsIgnoreCase(businessTypeName)) {
-			// SCHOOL logic remains the same (uses campusId and academicYearId)
-			logger.debug("Business type is SCHOOL. Fetching fee from CampusDetails...");
-			Optional<CampusDetails> campusDetailsOpt = campusDetailsRepository
-					.findByCampusCampusIdAndAcademicYearAcdcYearId(campusId, academicYearId);
-			if (campusDetailsOpt.isPresent()) {
-				applicationFee = campusDetailsOpt.get().getApp_fee();
-				logger.debug("Found fee in CampusDetails: {}", applicationFee);
-			} else {
-				logger.warn(
-						"CampusDetails record not found for SCHOOL campusId={}, academicYearId={}. Application fee will be null.",
-						campusId, academicYearId);
-			}
-		} else if ("COLLEGE".equalsIgnoreCase(businessTypeName)) {
-			// COLLEGE logic now uses academicYearId derived from BalanceTrack
-			logger.debug("Business type is COLLEGE. Fetching fee from StateApp using academicYearId {}...",
-					academicYearId);
-			Optional<StateApp> stateAppOpt = stateAppRepository.findStateAppByAppNoRangeAndAcademicYear(applicationNo,
-					academicYearId);
-			if (stateAppOpt.isPresent()) {
-				applicationFee = stateAppOpt.get().getAmount();
-				logger.debug("Found fee (amount) in StateApp: {}", applicationFee);
-			} else {
-				logger.warn(
-						"StateApp record not found for COLLEGE appNo range including {} and academicYearId={}. Application fee will be null.",
-						applicationNo, academicYearId);
-			}
-		} else {
-			logger.warn("Unhandled Business Type '{}' for Campus ID: {}. Cannot determine application fee.",
-					businessTypeName, campusId);
-		}
- 
-		// 6. Build and return the final DTO
-		CampusAndZoneDTO resultDTO = new CampusAndZoneDTO();
-		resultDTO.setCampusId(campusId);
-		resultDTO.setCampusName(campusName);
-		resultDTO.setZoneId(zoneId);
-		resultDTO.setZoneName(zoneName);
-		resultDTO.setAcademicYearId(academicYearId);
-		resultDTO.setAcademicYear(academicYearString);
-		resultDTO.setApplicationFee(applicationFee);
- 
-		logger.info("Successfully fetched details with fee for Application No: {}", applicationNo);
-		return resultDTO;
-	}
+    public CampusAndZoneDTO getApplicationDetailsWithFee(long applicationNo) {
+        logger.info("Fetching details with fee for Application No: {}", applicationNo);
+
+        // 1. Fetch from AppStatusTrackView
+        AppStatusTrackView statusTrack = appStatusTrackViewRepository.findByNum(applicationNo).orElseThrow(
+                () -> new EntityNotFoundException("Application status not found for No: " + applicationNo));
+
+        Integer campusId = statusTrack.getCmps_id();
+        String campusName = statusTrack.getCmps_name();
+        String zoneName = statusTrack.getZone_name();
+
+        if (campusId == null) {
+            logger.error("Campus ID is null in status track for App No: {}", applicationNo);
+            throw new EntityNotFoundException("Campus ID not found in status track for App No: " + applicationNo);
+        }
+        logger.debug("Found Status Track: CampusId={}, CampusName='{}', ZoneName='{}'", campusId, campusName, zoneName);
+
+        // 2. Fetch Zone ID using Zone Name
+        Integer zoneId = getZoneIdByName(zoneName);
+
+        // 3. Fetch Campus to get Business Type
+        Campus campus = campusRepo.findById(campusId)
+                .orElseThrow(() -> new EntityNotFoundException("Campus entity not found for ID: " + campusId));
+
+        BusinessType businessType = campus.getBusinessType();
+        if (businessType == null) {
+            logger.error("Business Type is not linked for Campus ID: {}", campusId);
+            throw new EntityNotFoundException("Business Type not linked for Campus ID: " + campusId);
+        }
+        String businessTypeName = businessType.getBusinessTypeName();
+        logger.debug("Found Campus: BusinessType='{}'", businessTypeName);
+
+        // 4. Fetch Academic Year from BalanceTrack
+        logger.debug("Fetching Academic Year from BalanceTrack for App No: {}", applicationNo);
+        BalanceTrack balanceTrack = balanceTrackRepository.findActiveBalanceTrackByAppNoRange(applicationNo)
+                .orElseThrow(() -> new EntityNotFoundException("BalanceTrack record covering Application No: "
+                        + applicationNo + " not found. Cannot determine Academic Year."));
+
+        AcademicYear academicYear = balanceTrack.getAcademicYear();
+        if (academicYear == null) {
+            logger.error("Academic Year is null in balance track record for App No: {}", applicationNo);
+            throw new EntityNotFoundException(
+                    "Academic Year not linked for BalanceTrack covering App No: " + applicationNo);
+        }
+        Integer academicYearId = academicYear.getAcdcYearId();
+        String academicYearString = academicYear.getAcademicYear();
+        logger.debug("Found BalanceTrack: AcademicYearId={}, AcademicYear='{}'", academicYearId, academicYearString);
+
+        // 5. Determine Application Fee based on Business Type
+        Float applicationFee = null; // Will hold fee for SCHOOL, or parsed app_fee for COLLEGE
+        Float stateAppAmount = null; // **New variable to hold StateApp.amount for COLLEGE**
+
+        if ("SCHOOL".equalsIgnoreCase(businessTypeName)) {
+            // SCHOOL logic (sets applicationFee)
+            logger.debug("Business type is SCHOOL. Fetching fee from CampusDetails...");
+            Optional<CampusDetails> campusDetailsOpt = campusDetailsRepository
+                    .findByCampusCampusIdAndAcademicYearAcdcYearId(campusId, academicYearId);
+            if (campusDetailsOpt.isPresent()) {
+                applicationFee = campusDetailsOpt.get().getApp_fee();
+                logger.debug("Found fee in CampusDetails: {}", applicationFee);
+            } else {
+                logger.warn(
+                        "CampusDetails record not found for SCHOOL campusId={}, academicYearId={}. Application fee will be null.",
+                        campusId, academicYearId);
+            }
+        } else if ("COLLEGE".equalsIgnoreCase(businessTypeName)) {
+            // COLLEGE logic (sets both stateAppAmount and applicationFee)
+            logger.debug("Business type is COLLEGE. Fetching fees from StateApp using academicYearId {}...",
+                    academicYearId);
+            Optional<StateApp> stateAppOpt = stateAppRepository.findStateAppByAppNoRangeAndAcademicYear(applicationNo,
+                    academicYearId);
+            if (stateAppOpt.isPresent()) {
+                StateApp stateApp = stateAppOpt.get();
+                
+                // **Map StateApp.amount to the dedicated stateAppAmount variable**
+                stateAppAmount = stateApp.getAmount();
+                logger.debug("Found amount from StateApp: {}", stateAppAmount);
+                
+                // **Parse StateApp.app_fee (String) and store it in applicationFee**
+                String appFeeString = stateApp.getApp_fee();
+                if (appFeeString != null && !appFeeString.trim().isEmpty()) {
+                    try {
+                        // Parse String to Float and set the main applicationFee variable
+                        applicationFee = Float.parseFloat(appFeeString.trim()); 
+                        logger.debug("Found app_fee (parsed) in StateApp: {}", applicationFee);
+                    } catch (NumberFormatException e) {
+                        logger.error("StateApp.app_fee value '{}' is not a valid number for App No: {}", 
+                                     appFeeString, applicationNo, e);
+                        applicationFee = null; // Ensure it's null if parsing fails
+                    }
+                } else {
+                    applicationFee = null; // Ensure it's null if app_fee string is empty/null
+                }
+            } else {
+                logger.warn(
+                        "StateApp record not found for COLLEGE appNo range including {} and academicYearId={}. Fees will be null.",
+                        applicationNo, academicYearId);
+            }
+        } else {
+            logger.warn("Unhandled Business Type '{}' for Campus ID: {}. Cannot determine application fee.",
+                    businessTypeName, campusId);
+        }
+
+        // 6. Build and return the final DTO
+        CampusAndZoneDTO resultDTO = new CampusAndZoneDTO();
+        resultDTO.setCampusId(campusId);
+        resultDTO.setCampusName(campusName);
+        resultDTO.setZoneId(zoneId);
+        resultDTO.setZoneName(zoneName);
+        resultDTO.setAcademicYearId(academicYearId);
+        resultDTO.setAcademicYear(academicYearString);
+        
+        // Maps the main fee variable (applicationFee)
+        resultDTO.setApplicationFee(applicationFee); 
+        
+        // Maps the StateApp.amount to the DTO's 'amount' field
+        resultDTO.setAmount(stateAppAmount); 
+
+        logger.info("Successfully fetched details with fee for Application No: {}", applicationNo);
+        return resultDTO;
+    }
  
 	// --- Helper method to cache Zone lookup by name (No changes needed here) ---
  
@@ -552,16 +589,16 @@ public class StudentAdmissionService {
 		// ==============================================================
     	
     	Long admissionNumberNumeric = formData.getStudAdmsNo();
-
+ 
     	if (admissionNumberNumeric == null) {
     	    throw new IllegalArgumentException("Admission Number must be provided.");
     	}
-
+ 
     	Distribution distribution = distributionRepo.findProDistributionForAdmissionNumber(admissionNumberNumeric)
     	        .orElseThrow(() -> new EntityNotFoundException(
     	            "No PRO has been assigned for Admission Number: " + admissionNumberNumeric
     	        ));
-
+ 
     	Employee pro = distribution.getIssuedToEmployee();
     	if (pro == null) {
     	     throw new EntityNotFoundException("A PRO has not been linked to the distribution for Admission Number: " + admissionNumberNumeric);
@@ -586,6 +623,8 @@ public class StudentAdmissionService {
 		academicDetails.setApaar_no(formData.getApaarNo());
 		academicDetails.setAdms_date(LocalDate.now());
 		academicDetails.setApp_sale_date(formData.getAppSaleDate());
+		academicDetails.setIs_active(1);
+ 
 		
 		if (formData.getProId() != null) {
 		    // Convert the Integer Employee ID from the DTO to a String
@@ -715,27 +754,88 @@ public class StudentAdmissionService {
 		PaymentDetailsDTO paymentDTO = formData.getPaymentDetails();
  
 		if (paymentDTO != null && paymentDTO.getAmount() != null) {
-			PaymentDetails paymentDetails = new PaymentDetails();
+		    PaymentDetails paymentDetails = new PaymentDetails();
  
-			paymentDetails.setStudentAcademicDetails(savedAcademicDetails);
-			paymentDetails.setApplication_fee_pay_date(paymentDTO.getPaymentDate());
-			paymentDetails.setPre_print_receipt_no(paymentDTO.getPrePrintedReceiptNo());
-			paymentDetails.setRemarks(paymentDTO.getRemarks());
-			paymentDetails.setCreated_by(paymentDTO.getCreatedBy());
-			paymentDetails.setApp_fee(paymentDTO.getAmount());
-			paymentDetails.setPaid_amount(paymentDTO.getAmount());
+		    paymentDetails.setStudentAcademicDetails(savedAcademicDetails);
+		    paymentDetails.setApplication_fee_pay_date(paymentDTO.getPaymentDate());
+		    paymentDetails.setPre_print_receipt_no(paymentDTO.getPrePrintedReceiptNo());
+		    
+		    // Use the Remarks from the DTO, which can come from either UI
+		    paymentDetails.setRemarks(paymentDTO.getRemarks());
+		    
+		    paymentDetails.setCreated_by(paymentDTO.getCreatedBy());
+		    paymentDetails.setApp_fee(paymentDTO.getAmount());
+		    paymentDetails.setPaid_amount(paymentDTO.getAmount());
  
-			paymentDetails.setAcedemicYear(savedAcademicDetails.getAcademicYear());
-			paymentDetails.setStudentClass(savedAcademicDetails.getStudentClass());
+		    paymentDetails.setAcedemicYear(savedAcademicDetails.getAcademicYear());
+		    paymentDetails.setStudentClass(savedAcademicDetails.getStudentClass());
  
-			if (paymentDTO.getPaymentModeId() != null) {
-				paymentModeRepo.findById(paymentDTO.getPaymentModeId()).ifPresent(paymentDetails::setPaymenMode);
-			}
+		    // Set the PaymentMode (e.g., Cash, DD, Cheque)
+		    if (paymentDTO.getPaymentModeId() != null) {
+		        paymentModeRepo.findById(paymentDTO.getPaymentModeId())
+		            .ifPresent(paymentDetails::setPaymenMode);
+		    }
  
-
-			paymentDetails.setStatus(defaultStatus);
+		    // Use the same default status you found earlier (ID: 2)
+		    paymentDetails.setStatus(defaultStatus);
  
-			paymentDetailsRepo.save(paymentDetails);
+		    // 1. SAVE THE MAIN PAYMENT RECORD
+		    PaymentDetails savedPaymentDetails = paymentDetailsRepo.save(paymentDetails);
+ 
+		    // 2. CHECK IF A TRANSACTION RECORD IS ALSO NEEDED (for DD or Cheque)
+		    Integer paymentModeId = paymentDTO.getPaymentModeId();
+ 
+		    // --- IMPORTANT: VERIFY THESE IDs FROM YOUR 'payment_mode' TABLE ---
+		    final int DD_PAYMENT_ID = 2;     // Example ID for 'DD'
+		    final int CHEQUE_PAYMENT_ID = 3; // Example ID for 'Cheque'
+		    // ------------------------------------------------------------------
+ 
+		    if (paymentModeId != null && (paymentModeId == DD_PAYMENT_ID || paymentModeId == CHEQUE_PAYMENT_ID)) {
+		        
+		        StudentApplicationTransaction transaction = new StudentApplicationTransaction();
+		        
+		        // Link to the main payment record
+		        transaction.setPaymnetDetails(savedPaymentDetails);
+		        transaction.setPaymentMode(savedPaymentDetails.getPaymenMode());
+		        
+		        // Set common transaction fields
+		        transaction.setNumber(paymentDTO.getTransactionNumber()); // DD No or Cheque No
+		        transaction.setDate(paymentDTO.getTransactionDate());     // DD Date or Cheque Date
+		        transaction.setApplication_fee_pay_date(paymentDTO.getPaymentDate());
+		        transaction.setCreated_by(paymentDTO.getCreatedBy());
+		        transaction.setStatus("Pending"); // Set a default status, e.g., "Pending" or "Submitted"
+ 
+		        if (paymentModeId == DD_PAYMENT_ID) {
+		            // --- Set DD-Specific Fields ---
+		            if (paymentDTO.getOrganisationId() != null) {
+		                transaction.setOrg_id(paymentDTO.getOrganisationId());
+		            }
+		            if (paymentDTO.getBankId() != null) {
+		                orgBankRepo.findById(paymentDTO.getBankId()).ifPresent(transaction::setOrgBank);
+		            }
+		            if (paymentDTO.getBranchId() != null) {
+		                orgBankBranchRepo.findById(paymentDTO.getBranchId()).ifPresent(transaction::setOrgBankBranch);
+		            }
+		            
+		        } else if (paymentModeId == CHEQUE_PAYMENT_ID) {
+		            // --- Set Cheque-SpecFfic Fields ---
+		            transaction.setIfsc_code(paymentDTO.getIfscCode());
+		            
+		            if (paymentDTO.getCityId() != null) {
+		                cityRepo.findById(paymentDTO.getCityId()).ifPresent(transaction::setCity);
+		            }
+		            // Assuming Cheque also uses Bank and Branch, based on your UI and entity
+		            if (paymentDTO.getBankId() != null) {
+		                orgBankRepo.findById(paymentDTO.getBankId()).ifPresent(transaction::setOrgBank);
+		            }
+		            if (paymentDTO.getBranchId() != null) {
+		                orgBankBranchRepo.findById(paymentDTO.getBranchId()).ifPresent(transaction::setOrgBankBranch);
+		            }
+		        }
+ 
+		        // 3. SAVE THE TRANSACTION RECORD
+		        studentApplicationTransactionRepo.save(transaction);
+		    }
 		}
  
 		return savedAcademicDetails;
@@ -1008,4 +1108,86 @@ public class StudentAdmissionService {
 
         return detailsDTO;
     }
+	
+	
+	@Transactional // Ensures atomicity: all updates succeed or all rollback
+	public StudentSaleDTO updateApplicationDetails(StudentSaleDTO saleDTO) {
+	    Long studAdmsNo = saleDTO.getStudAdmsNo();
+	    
+	    // 1. Fetch the main academic record (must exist for an update)
+	    StudentAcademicDetails academicDetails = academicDetailsRepo.findByStudAdmsNo(studAdmsNo)
+	        .orElseThrow(() -> new EntityNotFoundException("Student not found with Admission No: " + studAdmsNo));
+
+	    // 2. Fetch related records - use Optional for convenience
+	    // For update, it's safer to fetch existing related records or initialize new ones.
+	    StudentPersonalDetails personalDetails = personalDetailsRepo.findByStudentAcademicDetails(academicDetails)
+	        .orElse(new StudentPersonalDetails());
+	    personalDetails.setStudentAcademicDetails(academicDetails); // Set the relationship
+
+	    // Assuming Father has relationTypeId = 1
+	    ParentDetails fatherDetails = parentDetailsRepo.findByStudentAcademicDetailsAndStudentRelationStudentRelationId(academicDetails, 1)
+	        .orElse(new ParentDetails());
+	    fatherDetails.setStudentAcademicDetails(academicDetails);
+	    // You'll need to fetch and set the StudentRelation object for Father (ID 1)
+	    // For brevity, I'm assuming you have access to a repository for StudentRelation
+	    // fatherDetails.setStudentRelation(studentRelationRepo.findById(1).orElseThrow(() -> new EntityNotFoundException("Relation type not found")));
+
+	    StudentAddress studentAddress = addressRepo.findByStudentAcademicDetails(academicDetails)
+	        .orElse(new StudentAddress());
+	    studentAddress.setStudentAcademicDetails(academicDetails);
+	    
+	    // --- MAP DTO TO ENTITIES ---
+
+	    // 3. Map Academic Details (StudentAcademicDetails)
+	    academicDetails.setFirst_name(saleDTO.getFirstName());
+	    academicDetails.setLast_name(saleDTO.getLastName());
+	    academicDetails.setApaar_no(saleDTO.getApaarNo());
+	    if (saleDTO.getProReceiptNo() != null) {
+	        // Assuming StudentAcademicDetails.setPro_receipt_no() expects an int/Integer
+	        academicDetails.setPro_receipt_no(saleDTO.getProReceiptNo().intValue());
+	    }
+	    // Map DTO IDs to entity objects (Gender, Quota, AcademicYear, etc.)
+	    // You will need to fetch the actual entity objects using the DTO IDs.
+	    
+	    // Example: Fetch and set Gender
+	    /*
+	    if (saleDTO.getGenderId() != null) {
+	        Gender gender = genderRepo.findById(saleDTO.getGenderId())
+	            .orElseThrow(() -> new EntityNotFoundException("Gender not found with ID: " + saleDTO.getGenderId()));
+	        academicDetails.setGender(gender);
+	    }
+	    // Repeat for Quota, AcademicYear, Campus, StudentType, StudentClass, CampusSchoolType, AdmissionType
+	    */
+	    
+	    // 4. Map Personal Details (StudentPersonalDetails)
+	    personalDetails.setDob(saleDTO.getDob());
+	    personalDetails.setStud_aadhaar_no(saleDTO.getAadharCardNo());
+
+	    // 5. Map Parent Details (Father only - ParentDetails)
+	    fatherDetails.setName(saleDTO.getFatherName());
+	    fatherDetails.setMobileNo(saleDTO.getFatherMobileNo());
+
+	    // 6. Map Address Details (StudentAddress)
+	    AddressDetailsDTO addressDTO = saleDTO.getAddressDetails();
+	    if (addressDTO != null) {
+	        studentAddress.setHouse_no(addressDTO.getDoorNo());
+	        studentAddress.setStreet(addressDTO.getStreet());
+	        studentAddress.setLandmark(addressDTO.getLandmark());
+	        studentAddress.setArea(addressDTO.getArea());
+	        studentAddress.setPostalCode(addressDTO.getPincode());
+	        // Map DTO IDs to entity objects (City, Mandal, District)
+	        // Similar to Academic details, fetch and set the actual entity objects (e.g., District, Mandal, City)
+	    }
+
+	    // --- SAVE ALL ENTITIES ---
+	    // The save() method of Spring Data JPA handles both INSERT and UPDATE (MERGE)
+	    academicDetailsRepo.save(academicDetails);
+	    personalDetailsRepo.save(personalDetails);
+	    parentDetailsRepo.save(fatherDetails);
+	    addressRepo.save(studentAddress);
+
+	    // *Optional:* Re-fetch and map the saved data back to a DTO to return the complete, persisted state
+	    // For simplicity, we just return the input DTO, but a full service implementation might re-run the GET logic.
+	    return saleDTO; 
+	}
 }

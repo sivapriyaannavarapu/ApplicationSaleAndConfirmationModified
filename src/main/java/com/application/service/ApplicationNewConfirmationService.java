@@ -45,6 +45,7 @@ import com.application.entity.State;
 import com.application.entity.Status;
 // --- Import all your Entities ---
 import com.application.entity.StudentAcademicDetails;
+import com.application.entity.StudentApplicationTransaction;
 import com.application.entity.StudentClass;
 import com.application.entity.StudentConcessionType;
 import com.application.entity.StudentOrientationDetails;
@@ -55,12 +56,15 @@ import com.application.repository.AcademicYearRepository;
 import com.application.repository.BloodGroupRepository;
 import com.application.repository.CampusRepository;
 import com.application.repository.CampusSchoolTypeRepository;
+import com.application.repository.CityRepository;
 import com.application.repository.CmpsOrientationBatchFeeViewRepository;
 import com.application.repository.ConcessionReasonRepository;
 import com.application.repository.ConcessionTypeRepository;
 import com.application.repository.DistrictRepository;
 import com.application.repository.FoodTypeRepository;
 import com.application.repository.GenderRepository;
+import com.application.repository.OrgBankBranchRepository;
+import com.application.repository.OrgBankRepository;
 import com.application.repository.OrientationBatchRepository;
 import com.application.repository.OrientationRepository;
 import com.application.repository.ParentDetailsRepository;
@@ -73,6 +77,7 @@ import com.application.repository.StatusRepository;
 // --- Import all your Repositories ---
 // ... (All your repositories) ...
 import com.application.repository.StudentAcademicDetailsRepository;
+import com.application.repository.StudentApplicationTransactionRepository;
 import com.application.repository.StudentClassRepository;
 import com.application.repository.StudentConcessionTypeRepository;
 import com.application.repository.StudentOrientationDetailsRepository;
@@ -122,6 +127,11 @@ public class ApplicationNewConfirmationService {
     @Autowired private PaymentDetailsRepository paymentDetailsRepo; // --- ADD ---
     @Autowired private PaymentModeRepository paymentModeRepo;
     @Autowired private CampusRepository campusRepo;
+    @Autowired private OrgBankRepository orgBankRepo;
+    @Autowired private OrgBankBranchRepository orgBankBranchRepo;
+    @Autowired private CityRepository cityRepo;
+    @Autowired private StudentApplicationTransactionRepository studentApplicationTransactionRepo;
+ 
     
     
     
@@ -273,10 +283,10 @@ public class ApplicationNewConfirmationService {
         // --- 1. Find the Student ---
         StudentAcademicDetails student = academicRepo.findByStudAdmsNo(dto.getStudAdmsNo())
             .orElseThrow(() -> new EntityNotFoundException("Student not found with Admission No: " + dto.getStudAdmsNo()));
-
+ 
         // --- 2. Update Academic Details ---
         student.setHt_no(dto.getHtNo());
-        student.setApp_conf_date(dto.getAppConfDate()); 
+        student.setApp_conf_date(dto.getAppConfDate());
         student.setPre_school_name(dto.getSchoolName());
         student.setScore_app_no(dto.getScoreAppNo());
         student.setIs_active(1);
@@ -288,7 +298,7 @@ public class ApplicationNewConfirmationService {
         Status activeStatus = statusRepo.findById(1)
             .orElseThrow(() -> new EntityNotFoundException("Status 'Active' (ID: 1) not found"));
         student.setStatus(activeStatus);
-
+ 
         if (dto.getSchoolStateId() != null) {
             stateRepo.findById(dto.getSchoolStateId()).ifPresent(student::setState);
         }
@@ -296,11 +306,11 @@ public class ApplicationNewConfirmationService {
             districtRepo.findById(dto.getSchoolDistrictId()).ifPresent(student::setDistrict);
         }
         if (dto.getSchoolTypeId() != null) {
-            schoolTypeRepo.findById(dto.getSchoolTypeId()).ifPresent(student::setPreCampusSchoolType); 
+            schoolTypeRepo.findById(dto.getSchoolTypeId()).ifPresent(student::setPreCampusSchoolType);
         }
         
         academicRepo.save(student);
-
+ 
         // --- 3. Update Personal Details ---
         StudentPersonalDetails personalDetails = personalRepo.findByStudentAcademicDetails(student)
             .orElse(new StudentPersonalDetails());
@@ -313,7 +323,7 @@ public class ApplicationNewConfirmationService {
             bloodGroupRepo.findById(dto.getBloodGroupId()).ifPresent(personalDetails::setBloodGroup);
         }
         personalRepo.save(personalDetails);
-
+ 
         // --- 4. Update Orientation Details ---
         StudentOrientationDetails orientationDetails = orientationRepo.findByStudentAcademicDetails(student)
             .orElse(new StudentOrientationDetails());
@@ -349,7 +359,7 @@ public class ApplicationNewConfirmationService {
                 ));
             
             
-
+ 
             for (ParentDetailsDTO parentDto : dto.getParents()) {
                 
                 // 2. Check if a parent with this relation type already exists
@@ -375,7 +385,7 @@ public class ApplicationNewConfirmationService {
                 parentRepo.save(parent);
             }
         }
-
+ 
         // --- 6. Save/Update Sibling Details (UPSERT LOGIC) ---
         // WARNING: This logic is not perfect. If you change a sibling's name in the
         // form, this code will create a NEW sibling instead of updating the old one.
@@ -391,15 +401,15 @@ public class ApplicationNewConfirmationService {
                 .stream()
                 .filter(s -> s.getSibling_name() != null)
                 .collect(Collectors.toMap(Sibling::getSibling_name, Function.identity(), (first, second) -> first)); // Handle duplicates
-
-            for (SiblingDTO siblingDto : dto.getSiblings()) { 
+ 
+            for (SiblingDTO siblingDto : dto.getSiblings()) {
                 
                 // 2. Check if a sibling with this name already exists
                 Sibling sibling = existingSiblingsMap.get(siblingDto.getFullName());
                 
                 if (sibling == null) {
                     // 3. IF NOT: Create a new Sibling
-                    sibling = new Sibling(); 
+                    sibling = new Sibling();
                     sibling.setStudentAcademicDetails(student);
                     sibling.setCreated_by(siblingDto.getCreatedBy());
                     sibling.setSibling_name(siblingDto.getFullName());
@@ -425,11 +435,11 @@ public class ApplicationNewConfirmationService {
             
             // --- NO DELETE ---
             // concessionRepo.deleteAll(concessionRepo.findByStudAdmsId(student.getStud_adms_id()));
-
+ 
             // 1. Fetch existing concessions and put them in a Map
             // We use ConcessionType ID as the key.
             // WARNING: This assumes a student only has ONE of each concession type.
-            Map<Integer, StudentConcessionType> existingConcessionsMap = 
+            Map<Integer, StudentConcessionType> existingConcessionsMap =
                 concessionRepo.findByStudAdmsId(student.getStud_adms_id())
                 .stream()
                 .filter(c -> c.getConcessionType() != null)
@@ -438,10 +448,10 @@ public class ApplicationNewConfirmationService {
                     Function.identity(),
                     (first, second) -> first // Handle duplicates
                 ));
-
+ 
             AcademicYear currentYear = academicYearRepo.findById(student.getAcademicYear().getAcdcYearId())
                 .orElseThrow(() -> new EntityNotFoundException("Academic Year not found"));
-
+ 
             for (ConcessionConfirmationDTO concDto : dto.getConcessions()) {
                 
                 // 2. Check if a concession with this type already exists
@@ -458,7 +468,7 @@ public class ApplicationNewConfirmationService {
                         concessionTypeRepo.findById(concDto.getConcessionTypeId()).ifPresent(concession::setConcessionType);
                     }
                 }
-
+ 
                 // 4. Update all fields
                 concession.setConc_amount(concDto.getConcessionAmount());
                 concession.setComments(concDto.getComments());
@@ -470,7 +480,7 @@ public class ApplicationNewConfirmationService {
                 concession.setConc_referred_by(concDto.getConcReferedBy());
                 
                 if (concDto.getGivenById() != null) {
-                    concession.setConc_issued_by(concDto.getGivenById()); 
+                    concession.setConc_issued_by(concDto.getGivenById());
                 }
                 if (concDto.getAuthorizedById() != null) {
                     concession.setConc_authorised_by(concDto.getAuthorizedById());
@@ -482,43 +492,94 @@ public class ApplicationNewConfirmationService {
         }
         
      // --- 8. NEW: Save Payment Details (if provided) ---
-        PaymentDetailsDTO paymentDTO = dto.getPaymentDetails();
-
-        // Only save payment if payment details exist in the DTO
-        if (paymentDTO != null && paymentDTO.getAmount() != null) {
-            PaymentDetails paymentDetails = new PaymentDetails();
-
-            // Link the payment to the student
-            paymentDetails.setStudentAcademicDetails(student);
-
-            // Map fields from the Payment DTO
-            paymentDetails.setApplication_fee_pay_date(paymentDTO.getPaymentDate());
-            paymentDetails.setPre_print_receipt_no(paymentDTO.getPrePrintedReceiptNo());
-            paymentDetails.setRemarks(paymentDTO.getRemarks());
-            paymentDetails.setCreated_by(paymentDTO.getCreatedBy());
-
-            // Set amount fields
-            paymentDetails.setApp_fee(paymentDTO.getAmount());
-            paymentDetails.setPaid_amount(paymentDTO.getAmount());
-            paymentDetails.setDue(0f); // Assume fully paid for confirmation payment
-
-            // Set relationships from the student
-            paymentDetails.setAcedemicYear(student.getAcademicYear());
-            paymentDetails.setStudentClass(student.getStudentClass());
-
-            // Set PaymentMode
-            if (paymentDTO.getPaymentModeId() != null) {
-                paymentModeRepo.findById(paymentDTO.getPaymentModeId())
-                               .ifPresent(paymentDetails::setPaymenMode);
-            }
-
-            // Set default status (e.g., "Paid" - assuming ID 1)
-            // Use the same 'activeStatus' we fetched earlier, or fetch a specific "Paid" status
-            paymentDetails.setStatus(activeStatus); // Or fetch Status ID for "Paid" if different
-
-            paymentDetailsRepo.save(paymentDetails);
-        }
-
+        PaymentDetailsDTO paymentDTO =dto.getPaymentDetails();
+ 
+		if (paymentDTO != null && paymentDTO.getAmount() != null) {
+		    PaymentDetails paymentDetails = new PaymentDetails();
+ 
+		    paymentDetails.setStudentAcademicDetails(student);
+		    paymentDetails.setApplication_fee_pay_date(paymentDTO.getPaymentDate());
+		    paymentDetails.setPre_print_receipt_no(paymentDTO.getPrePrintedReceiptNo());
+		    
+		    // Use the Remarks from the DTO, which can come from either UI
+		    paymentDetails.setRemarks(paymentDTO.getRemarks());
+		    
+		    paymentDetails.setCreated_by(paymentDTO.getCreatedBy());
+		    paymentDetails.setApp_fee(paymentDTO.getAmount());
+		    paymentDetails.setPaid_amount(paymentDTO.getAmount());
+ 
+		    paymentDetails.setAcedemicYear(student.getAcademicYear());
+		    paymentDetails.setStudentClass(student.getStudentClass());
+ 
+		    // Set the PaymentMode (e.g., Cash, DD, Cheque)
+		    if (paymentDTO.getPaymentModeId() != null) {
+		        paymentModeRepo.findById(paymentDTO.getPaymentModeId())
+		            .ifPresent(paymentDetails::setPaymenMode);
+		    }
+		        student.setStatus(activeStatus);
+		
+ 
+		    // Use the same default status you found earlier (ID: 2)
+		    paymentDetails.setStatus(activeStatus);
+ 
+		    // 1. SAVE THE MAIN PAYMENT RECORD
+		    PaymentDetails savedPaymentDetails = paymentDetailsRepo.save(paymentDetails);
+ 
+		    // 2. CHECK IF A TRANSACTION RECORD IS ALSO NEEDED (for DD or Cheque)
+		    Integer paymentModeId = paymentDTO.getPaymentModeId();
+ 
+		    // --- IMPORTANT: VERIFY THESE IDs FROM YOUR 'payment_mode' TABLE ---
+		    final int DD_PAYMENT_ID = 2;     // Example ID for 'DD'
+		    final int CHEQUE_PAYMENT_ID = 3; // Example ID for 'Cheque'
+		    // ------------------------------------------------------------------
+ 
+		    if (paymentModeId != null && (paymentModeId == DD_PAYMENT_ID || paymentModeId == CHEQUE_PAYMENT_ID)) {
+		        
+		        StudentApplicationTransaction transaction = new StudentApplicationTransaction();
+		        
+		        // Link to the main payment record
+		        transaction.setPaymnetDetails(savedPaymentDetails);
+		        transaction.setPaymentMode(savedPaymentDetails.getPaymenMode());
+		        
+		        // Set common transaction fields
+		        transaction.setNumber(paymentDTO.getTransactionNumber()); // DD No or Cheque No
+		        transaction.setDate(paymentDTO.getTransactionDate());     // DD Date or Cheque Date
+		        transaction.setApplication_fee_pay_date(paymentDTO.getPaymentDate());
+		        transaction.setCreated_by(paymentDTO.getCreatedBy());
+		        transaction.setStatus("Pending"); // Set a default status, e.g., "Pending" or "Submitted"
+ 
+		        if (paymentModeId == DD_PAYMENT_ID) {
+		            // --- Set DD-Specific Fields ---
+		            if (paymentDTO.getOrganisationId() != null) {
+		                transaction.setOrg_id(paymentDTO.getOrganisationId());
+		            }
+		            if (paymentDTO.getBankId() != null) {
+		                orgBankRepo.findById(paymentDTO.getBankId()).ifPresent(transaction::setOrgBank);
+		            }
+		            if (paymentDTO.getBranchId() != null) {
+		                orgBankBranchRepo.findById(paymentDTO.getBranchId()).ifPresent(transaction::setOrgBankBranch);
+		            }
+		            
+		        } else if (paymentModeId == CHEQUE_PAYMENT_ID) {
+		            // --- Set Cheque-SpecFfic Fields ---
+		            transaction.setIfsc_code(paymentDTO.getIfscCode());
+		            
+		            if (paymentDTO.getCityId() != null) {
+		                cityRepo.findById(paymentDTO.getCityId()).ifPresent(transaction::setCity);
+		            }
+		            // Assuming Cheque also uses Bank and Branch, based on your UI and entity
+		            if (paymentDTO.getBankId() != null) {
+		                orgBankRepo.findById(paymentDTO.getBankId()).ifPresent(transaction::setOrgBank);
+		            }
+		            if (paymentDTO.getBranchId() != null) {
+		                orgBankBranchRepo.findById(paymentDTO.getBranchId()).ifPresent(transaction::setOrgBankBranch);
+		            }
+		        }
+ 
+		        // 3. SAVE THE TRANSACTION RECORD
+		        studentApplicationTransactionRepo.save(transaction);
+		    }
+		}
         return student;
     }
 }
