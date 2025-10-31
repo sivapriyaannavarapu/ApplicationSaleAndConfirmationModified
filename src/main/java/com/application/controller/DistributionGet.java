@@ -18,6 +18,7 @@ import com.application.dto.AppRangeDTO;
 import com.application.dto.ApplicationRangeInfoDTO;
 import com.application.dto.ApplicationStartEndDto;
 import com.application.dto.EmployeeApplicationsDTO;
+import com.application.dto.EmployeesDto;
 import com.application.dto.GenericDropdownDTO;
 import com.application.dto.NextAppNumberDTO;
 import com.application.entity.AcademicYear;
@@ -122,9 +123,11 @@ public class DistributionGet {
 	    }
 	   // GET /api/zonal-accountants/zone/1/employees
 	    @GetMapping("/zone/{zoneId}/employees")
-	    public List<Employee> getEmployeesByZone(@PathVariable int zoneId) {
+	    public List<EmployeesDto> getEmployeesByZone(@PathVariable int zoneId) {
 	        return distributionService.getEmployeesByZone(zoneId);
 	    }
+	    
+	 
 	    
 	    @Autowired
 	    private DgmService applicationService;

@@ -1,5 +1,6 @@
 package com.application.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -18,6 +19,9 @@ public class ZonalAccountant {
 
 	@Id
 	private int zone_acct_id;
+	
+	@Column(name = "is_active")
+	private int isActive;
 
 	@ManyToOne
 	@JoinColumn(name = "zone_id")
@@ -30,4 +34,6 @@ public class ZonalAccountant {
 	@ManyToOne
 	@JoinColumn(name = "emp_id")
 	private Employee employee;
+	
+	
 }

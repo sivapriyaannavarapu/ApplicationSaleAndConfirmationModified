@@ -21,6 +21,7 @@ import com.application.dto.BatchDTO;
 import com.application.dto.CampusDropdownDTO;
 // --- Import all your DTOs ---
 import com.application.dto.ConcessionConfirmationDTO;
+import com.application.dto.GenericDropdownDTO;
 import com.application.dto.OccupationSectorDropdownDTO;
 import com.application.dto.OrientationBatchDetailsDTO;
 import com.application.dto.OrientationDropdownDTO;
@@ -31,6 +32,7 @@ import com.application.dto.SiblingDTO;
 import com.application.dto.StudentConfirmationDTO;
 import com.application.entity.AcademicYear;
 import com.application.entity.BloodGroup;
+import com.application.entity.City;
 import com.application.entity.CmpsOrientationBatchFeeView;
 import com.application.entity.ConcessionReason;
 import com.application.entity.District;
@@ -195,7 +197,6 @@ public class ApplicationNewConfirmationService {
     public List<CampusDropdownDTO> getCampusesByBusinessType(String businessTypeName) {
         return campusRepo.findActiveCampusesByBusinessTypeName(businessTypeName);
     }
-    
     
     @Cacheable(value = "orientationAndBatchDetails", key = "{#orientationId, #orientationBatchId}")
     public Optional<OrientationBatchDetailsDTO> getDetailsByOrientationAndBatch(int orientationId, int orientationBatchId) {

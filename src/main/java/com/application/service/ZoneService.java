@@ -508,6 +508,7 @@ package com.application.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -518,6 +519,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.application.dto.ApplicationRangeInfoDTO;
 import com.application.dto.ApplicationStartEndDto;
 import com.application.dto.DistributionRequestDTO;
+import com.application.dto.EmployeesDto;
 import com.application.dto.NextAppNumberDTO;
 import com.application.entity.AcademicYear;
 import com.application.entity.BalanceTrack;
@@ -581,7 +583,8 @@ public class ZoneService {
 
 //    @Cacheable("states")
 	public List<State> getAllStates() {
-		return stateRepository.findAll();
+		// Assumption: State entity has a field named 'is_active' or similar.
+		return stateRepository.findByStatus(1);
 	}
 
 //    @Cacheable(cacheNames = "citiesByState", key = "#stateId")
@@ -605,10 +608,40 @@ public class ZoneService {
 	}
 
 //    @Cacheable(cacheNames = "employeesByZone", key = "#zoneId")
-	public List<Employee> getEmployeesByZone(int zoneId) {
-		return zonalAccountantRepository.findByZoneZoneId(zoneId).stream().map(ZonalAccountant::getEmployee)
-				.collect(Collectors.toList());
-	}
+//	public List<Employee> getEmployeesByZone(int zoneId) {
+//		return zonalAccountantRepository.findByZoneZoneId(zoneId).stream().map(ZonalAccountant::getEmployee)
+//				.collect(Collectors.toList());
+//	}
+	
+	@Transactional(readOnly = true)  // Recommended for lazy loading
+    public List<EmployeesDto> getEmployeesByZone(int zoneId) {
+        // Fetch only active zonal accountants (ZonalAccountant.isActive == 1)
+        List<ZonalAccountant> activeAccountants = zonalAccountantRepository
+            .findByZoneZoneIdAndIsActive(zoneId, 1);
+        
+        // Map and filter: Only include if Employee.isActive == 1
+        return activeAccountants.stream()
+            .map(this::mapToEmployeeDto)
+            .filter(Objects::nonNull)  // Skip null/inactive employees
+            .collect(Collectors.toList());
+    }
+
+    // Helper: Maps only if employee is active (filters but doesn't include in DTO)
+    private EmployeesDto mapToEmployeeDto(ZonalAccountant accountant) {
+        var employee = accountant.getEmployee();
+        // Filter: Skip if employee null or inactive
+        if (employee == null || employee.getIsActive() == null || employee.getIsActive() != 1) {
+            return null;
+        }
+        // Map without isActive
+        return new EmployeesDto(
+            employee.getEmp_id(),
+            employee.getFirst_name(),
+            employee.getLast_name(),
+            employee.getPrimary_mobile_no()
+        );
+    }
+	
 
 //    @Cacheable(cacheNames = "nextAppNumber", key = "{#academicYearId, #stateId, #userId}")
 	public String getNextApplicationNumber(int academicYearId, int stateId, int userId) {
@@ -735,26 +768,28 @@ public class ZoneService {
 	@Transactional
 //    @CacheEvict(value = {"nextAppNumber", "appEndNo", "balanceTrack"}, allEntries = true)
 	public void saveDistribution(@NonNull DistributionRequestDTO request) {
-		validateEmployeeExists(request.getCreatedBy(), "Issuer");
-		validateEmployeeExists(request.getIssuedToEmpId(), "Receiver");
+	    validateEmployeeExists(request.getCreatedBy(), "Issuer");
+	    validateEmployeeExists(request.getIssuedToEmpId(), "Receiver");
 
-		// NOTE: findOverlappingDistributions query must only look at isActive=1
-		// distributions
-		List<Distribution> overlappingDists = distributionRepository.findOverlappingDistributions(
-				request.getAcademicYearId(), request.getAppStartNo(), request.getAppEndNo());
+	    List<Distribution> overlappingDists = distributionRepository.findOverlappingDistributions(
+	            request.getAcademicYearId(), request.getAppStartNo(), request.getAppEndNo());
 
-		if (!overlappingDists.isEmpty()) {
-			handleOverlappingDistributions(overlappingDists, request);
-		}
+	    if (!overlappingDists.isEmpty()) {
+	        handleOverlappingDistributions(overlappingDists, request);
+	    }
 
-		Distribution newDistribution = new Distribution();
-		mapDtoToDistribution(newDistribution, request);
-		distributionRepository.save(newDistribution);
+	    Distribution newDistribution = new Distribution();
+	    mapDtoToDistribution(newDistribution, request);
 
-		recalculateBalanceForEmployee(request.getCreatedBy(), request.getAcademicYearId(), request.getStateId(),
-				request.getIssuedByTypeId(), request.getCreatedBy());
-		recalculateBalanceForEmployee(request.getIssuedToEmpId(), request.getAcademicYearId(), request.getStateId(),
-				request.getIssuedToTypeId(), request.getCreatedBy());
+	    Distribution savedDist = distributionRepository.save(newDistribution);
+	    if (savedDist == null || savedDist.getAppDistributionId() == null) {
+	        throw new RuntimeException("Failed to save distribution record — aborting balance recalculation.");
+	    }
+
+	    recalculateBalanceForEmployee(request.getCreatedBy(), request.getAcademicYearId(), request.getStateId(),
+	            request.getIssuedByTypeId(), request.getCreatedBy());
+	    recalculateBalanceForEmployee(request.getIssuedToEmpId(), request.getAcademicYearId(), request.getStateId(),
+	            request.getIssuedToTypeId(), request.getCreatedBy());
 	}
 
 	/**

@@ -24,7 +24,7 @@ public class Distribution {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "app_distrubution_id")
-    private int appDistributionId;
+    private Integer appDistributionId;
  
     @Column(name = "app_start_no")
     private int appStartNo;

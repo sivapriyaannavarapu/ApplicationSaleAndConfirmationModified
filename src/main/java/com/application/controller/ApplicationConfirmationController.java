@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.application.dto.ApiResponse;
 import com.application.dto.BatchDTO;
 import com.application.dto.CampusDropdownDTO;
+import com.application.dto.GenericDropdownDTO;
 import com.application.dto.OccupationSectorDropdownDTO;
 import com.application.dto.OrientationBatchDetailsDTO;
 import com.application.dto.OrientationDropdownDTO;
@@ -568,6 +569,6 @@ public class ApplicationConfirmationController {
                     .body(ApiResponse.error("Failed to fetch orientation fee: " + e.getMessage()));
         }
     }
- 
+    
 
 }

@@ -18,7 +18,10 @@ public class State {
 
     @Column(name = "state_name")
     private String stateName;
-
+    
+    @Column(name = "status")
+    private int status;
+    
     @ManyToOne
     @JoinColumn(name = "country_id", referencedColumnName = "country_id")
     private Country country;
