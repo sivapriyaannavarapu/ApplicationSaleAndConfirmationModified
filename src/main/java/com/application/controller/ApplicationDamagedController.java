@@ -213,4 +213,11 @@ public class ApplicationDamagedController {
         return ResponseEntity.ok(campuses);
     }
     
+    @GetMapping("/by_campus/damaged_details")
+    public AppStatusTrackView getAppStatusByCampusAndNumber(
+            @RequestParam int appNo,
+            @RequestParam String campusName) {
+        return applicationDamagedService.getAppStatusByCampusAndNumber(appNo, campusName);
+    }
+    
 }

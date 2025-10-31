@@ -20,4 +20,8 @@ public interface AppStatusTrackViewRepository extends JpaRepository<AppStatusTra
 	@Query("SELECT a FROM AppStatusTrackView a WHERE a.cmps_id = " +
 	           "(SELECT e.campus.campusId FROM Employee e WHERE e.emp_id = :empId)")
 	    List<AppStatusTrackView> findByEmployeeCampus(@Param("empId") int empId);
+	
+	@Query("SELECT a FROM AppStatusTrackView a WHERE a.num = :num AND a.cmps_name = :cmpsName")
+	Optional<AppStatusTrackView> findByNumAndCmps_name(@Param("num") int num, @Param("cmpsName") String cmpsName);
+
 }
