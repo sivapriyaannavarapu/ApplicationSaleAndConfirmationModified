@@ -682,6 +682,12 @@ public class DgmService {
 
  // REVISED recalculateBalanceForEmployee in DgmService
     private void recalculateBalanceForEmployee(int employeeId, int academicYearId, int typeId, int createdBy) {
+    	
+    	if (typeId == 1 || employeeId == createdBy) {
+            // You can log it if you want:
+            System.out.println("Skipping balance recalculation for Admin/self-issued record. Employee ID: " + employeeId);
+            return;
+        }
         
         // Finds existing BalanceTrack or creates a new one (AppBalanceTrkId will be 0 or null before save)
         BalanceTrack balance = balanceTrackRepository.findBalanceTrack(academicYearId, employeeId)

@@ -624,6 +624,12 @@ public List<GenericDropdownDTO> getEmployeeDropdownByCampus(int campusId) {
  // REVISED recalculateBalanceForEmployee for CampusService
  // REVISED recalculateBalanceForEmployee in DgmService
     private void recalculateBalanceForEmployee(int employeeId, int academicYearId, int typeId, int createdBy) {
+    	
+    	if (typeId == 1 || employeeId == createdBy) {
+            // You can log it if you want:
+            System.out.println("Skipping balance recalculation for Admin/self-issued record. Employee ID: " + employeeId);
+            return;
+        }
         
         // Finds existing BalanceTrack or creates a new one.
         // If new, createNewBalanceTrack returns an object with appFrom/appTo set to 0.

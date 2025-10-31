@@ -936,6 +936,12 @@ public class ZoneService {
 
 	private void recalculateBalanceForEmployee(int employeeId, int academicYearId, int stateId, int typeId,
 			int createdBy) {
+		
+		if (typeId == 1 || employeeId == createdBy) {
+            // You can log it if you want:
+            System.out.println("Skipping balance recalculation for Admin/self-issued record. Employee ID: " + employeeId);
+            return;
+        }
 		BalanceTrack balance = balanceTrackRepository.findBalanceTrack(academicYearId, employeeId)
 				.orElseGet(() -> createNewBalanceTrack(employeeId, academicYearId, typeId, createdBy));
 
