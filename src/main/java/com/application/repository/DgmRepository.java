@@ -32,4 +32,19 @@ public interface DgmRepository extends JpaRepository<Dgm, Integer> {
 	            + "WHERE d.zone.zoneId = :zoneId "
 	            + "AND e.isActive = 1") 
 	       List<GenericDropdownDTO> findDistinctActiveEmployeesByZoneId(@Param("zoneId") int zoneId);
+	    
+	    @Query("SELECT DISTINCT new com.application.dto.GenericDropdownDTO(c.campusId, c.campusName) " +
+	            "FROM Dgm d " +
+	            "JOIN d.campus c " +
+	            "WHERE c.isActive = 1")
+	     List<GenericDropdownDTO> findDistinctActiveCampusesByDgm();
+	    
+	    @Query("SELECT d FROM Dgm d WHERE d.employee.emp_id = :empId")
+	    List<Dgm> findByEmpId(@Param("empId") Integer empId);
+	    
+	    
+	    @Query("SELECT DISTINCT d.campus.campusId FROM Dgm d WHERE d.zone.zoneId IN :zoneIds")
+	    List<Integer> findCampusIdsByZoneIds(List<Integer> zoneIds);
+
+
 }

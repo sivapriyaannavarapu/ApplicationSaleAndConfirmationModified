@@ -142,6 +142,21 @@ public class DistributionGet {
 	        return applicationService.getCampusesByZoneId(zoneId);
 	    }
 	    
+	    @GetMapping("/campusesforzonal_accountant/{empId}")
+	    public List<GenericDropdownDTO> getCampusesByEmployee(@PathVariable int empId) {
+	        return applicationService.getCampusesByEmployeeId(empId);
+	    }
+	    
+	    @GetMapping("/campusesfordgm/{empId}")
+	    public List<GenericDropdownDTO> getActiveCampusesByEmpId(@PathVariable Integer empId) {
+	        return applicationService.getActiveCampusesByEmpId(empId);
+	    }
+	    
+	    @GetMapping("/dgmforzonal_accountant/{empId}")
+	    public List<GenericDropdownDTO> getActiveCampusesByEmployee(@PathVariable int empId) {
+	        return applicationService.getActiveCampusesByEmployeeId(empId);
+	    }
+	    
 	    @GetMapping("/issued-to")
 	    public List<GenericDropdownDTO> getIssuedToTypes() {
 	        return applicationService.getAllIssuedToTypes();

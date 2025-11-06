@@ -301,6 +301,7 @@ import com.application.dto.FormSubmissionDTO;
 import com.application.dto.GenericDropdownDTO;
 import com.application.entity.BalanceTrack;
 import com.application.entity.Campus;
+import com.application.entity.Dgm;
 import com.application.entity.Distribution;
 import com.application.entity.UserAdminView;
 import com.application.entity.Zone;
@@ -313,6 +314,7 @@ import com.application.repository.DgmRepository;
 import com.application.repository.DistributionRepository;
 import com.application.repository.EmployeeRepository;
 import com.application.repository.UserAdminViewRepository;
+import com.application.repository.ZonalAccountantRepository;
 import com.application.repository.ZoneRepository;
 
 import lombok.NonNull;
@@ -332,6 +334,7 @@ public class DgmService {
     private final BalanceTrackRepository balanceTrackRepository;
     private final DgmRepository dgmRepository;
     private final UserAdminViewRepository userAdminViewRepository;
+    private final ZonalAccountantRepository zonalAccountantRepository;
 
     // --- Dropdown and Helper Methods with Caching ---
 //    @Cacheable("academicYears")
@@ -368,11 +371,59 @@ public class DgmService {
     }
 
 //    @Cacheable(cacheNames = "campusesByZone", key = "#zoneId")
+ // In your Service class (e.g., ApplicationService)
     public List<GenericDropdownDTO> getCampusesByZoneId(int zoneId) {
-        return campusRepository.findByZoneZoneId(zoneId).stream()
+        // Call the new repository method
+        return campusRepository.findActiveCampusesByZoneId(zoneId).stream()
+                // .distinct() might be useful here to ensure unique campuses if a campus is linked to multiple active zonal accountants in the same zone
+                .distinct() 
                 .map(campus -> new GenericDropdownDTO(campus.getCampusId(), campus.getCampusName()))
                 .collect(Collectors.toList());
     }
+    
+    public List<GenericDropdownDTO> getCampusesByEmployeeId(int empId) {
+    	List<Integer> zoneIds = zonalAccountantRepository.findZoneIdByEmployeeId(empId);
+        if (zoneIds == null || zoneIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return zoneIds.stream()
+                .flatMap(zoneId -> getCampusesByZoneId(zoneId).stream())
+                .distinct()
+                .collect(Collectors.toList());
+    }
+    
+    public List<GenericDropdownDTO> getActiveCampusesByEmpId(Integer empId) {
+        List<Dgm> dgms = dgmRepository.findByEmpId(empId);
+
+        // Map to GenericDropdownDTO — filtering only active campuses
+        return dgms.stream()
+                .filter(d -> d.getCampus() != null && d.getCampus().getIsActive() != null && d.getCampus().getIsActive() == 1)
+                .map(d -> new GenericDropdownDTO(
+                        d.getCampus().getCampusId(),
+                        d.getCampus().getCampusName()
+                ))
+                .collect(Collectors.toList());
+    }
+    
+    public List<GenericDropdownDTO> getActiveCampusesByEmployeeId(int empId) {
+        List<Integer> zoneIds = zonalAccountantRepository.findZoneIdByEmployeeId(empId);
+        if (zoneIds == null || zoneIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Step 2: Get campus IDs for all zones
+        List<Integer> campusIds = dgmRepository.findCampusIdsByZoneIds(zoneIds);
+        if (campusIds == null || campusIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Step 3: Get only active campuses
+        return campusRepository.findActiveCampusesByIds(campusIds);
+    }
+
+    
+    
 
 //    @Cacheable("issuedToTypes")
     public List<GenericDropdownDTO> getAllIssuedToTypes() {

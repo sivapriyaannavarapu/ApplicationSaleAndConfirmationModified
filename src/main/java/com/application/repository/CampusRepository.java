@@ -12,11 +12,16 @@ import org.springframework.stereotype.Repository;
 import com.application.dto.CampusDetailsDTO;
 import com.application.dto.CampusDropdownDTO;
 import com.application.dto.CampusDto;
+import com.application.dto.GenericDropdownDTO;
 import com.application.entity.Campus;
 import com.application.entity.Zone;
 
 @Repository
 public interface CampusRepository extends JpaRepository<Campus, Integer>{
+	
+	
+	@Query("SELECT za.campus FROM ZonalAccountant za WHERE za.zone.zoneId = :zoneId AND za.isActive = 1")
+    List<Campus> findActiveCampusesByZoneId(@Param("zoneId") int zoneId);
 	
 	List<Campus> findByZoneZoneId(int zoneId);
 	List<Campus> findByCityCityId(int cityId);
@@ -53,4 +58,13 @@ public interface CampusRepository extends JpaRepository<Campus, Integer>{
 	 @EntityGraph(attributePaths = {"zone", "state", "businessType"}, 
 	              type = EntityGraph.EntityGraphType.LOAD)
 	 Optional<Campus> findById(Integer id);
+	 
+	 @Query("SELECT NEW com.application.dto.GenericDropdownDTO(c.campusId, c.campusName) " +
+	           "FROM Campus c " +
+	           "WHERE c.isActive = 1")
+	    List<GenericDropdownDTO> findAllActiveCampusesForDropdown();
+	 
+	 @Query("SELECT new com.application.dto.GenericDropdownDTO(c.campusId, c.campusName) "
+	         + "FROM Campus c WHERE c.campusId IN :campusIds AND c.isActive = 1")
+	    List<com.application.dto.GenericDropdownDTO> findActiveCampusesByIds(List<Integer> campusIds);
 }

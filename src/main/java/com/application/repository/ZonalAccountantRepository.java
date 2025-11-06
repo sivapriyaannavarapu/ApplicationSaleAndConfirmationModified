@@ -17,5 +17,9 @@ public interface ZonalAccountantRepository extends JpaRepository<ZonalAccountant
 	 
 	 List<ZonalAccountant> findByZoneZoneIdAndIsActive(int zoneId, int isActive);
 	 
+	 @Query("SELECT za.zone.zoneId FROM ZonalAccountant za WHERE za.employee.id = :empId AND za.isActive = 1")
+	 List<Integer> findZoneIdByEmployeeId(@Param("empId") int empId);
+	 
+	 
 	
 }

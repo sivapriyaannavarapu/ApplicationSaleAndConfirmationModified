@@ -8,8 +8,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +15,7 @@ import com.application.dto.AppStatusDetailsDTO;
 import com.application.dto.ApplicationDamagedDto;
 import com.application.dto.CampusDto;
 import com.application.dto.EmployeeDto;
+import com.application.dto.GenericDropdownDTO;
 import com.application.entity.AppStatus;
 import com.application.entity.AppStatusTrackView;
 import com.application.entity.ApplicationStatus;
@@ -69,8 +68,13 @@ public class ApplicationDamagedService {
     }
 
 //    @Cacheable(value = "allCampuses")
-    public List<Campus> getAllCampuses() {
-        return campusRepository.findAll();
+    public List<GenericDropdownDTO> getActiveCampusesDropdown() {
+        // This calls the custom JPQL method
+        return campusRepository.findAllActiveCampusesForDropdown();
+    }
+    
+    public List<GenericDropdownDTO> getDgmCampusesDropdown() {
+        return dgmRepository.findDistinctActiveCampusesByDgm();
     }
 
 //    @Cacheable(value = "allStatuses")
@@ -79,8 +83,8 @@ public class ApplicationDamagedService {
     }
 
 //    @Cacheable(value = "allZones")
-    public List<Zone> getAllZones() {
-        return zoneRepository.findAll();
+    public List<GenericDropdownDTO> getAllZones() {
+        return zoneRepository.findAllActiveZonesForDropdown();
     }
 
 //    @Cacheable(value = "campusesByDgm", key = "#dgmId")

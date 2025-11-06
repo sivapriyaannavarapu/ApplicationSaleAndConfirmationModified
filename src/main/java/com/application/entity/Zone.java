@@ -18,6 +18,7 @@ public class Zone {
 
     @Column(name = "zone_name")
     private String zoneName;
+    
 
     @ManyToOne
     @JoinColumn(name = "city_id", referencedColumnName = "city_id")

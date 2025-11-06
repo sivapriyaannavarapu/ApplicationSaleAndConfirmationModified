@@ -35,5 +35,4 @@ public class ZonalAccountant {
 	@JoinColumn(name = "emp_id")
 	private Employee employee;
 	
-	
 }

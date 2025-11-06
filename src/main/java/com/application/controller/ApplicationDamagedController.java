@@ -104,6 +104,7 @@ import com.application.dto.AppStatusDetailsDTO;
 import com.application.dto.ApplicationDamagedDto;
 import com.application.dto.CampusDto;
 import com.application.dto.EmployeeDto;
+import com.application.dto.GenericDropdownDTO;
 import com.application.entity.AppStatus;
 import com.application.entity.AppStatusTrackView;
 import com.application.entity.ApplicationStatus;
@@ -148,8 +149,8 @@ public class ApplicationDamagedController {
     }
  
     @GetMapping("/zones")
-    public ResponseEntity<List<Zone>> getAllZones() {
-        List<Zone> zone = applicationDamagedService.getAllZones();
+    public ResponseEntity<List<GenericDropdownDTO>> getAllZones() {
+        List<GenericDropdownDTO> zone = applicationDamagedService.getAllZones();
         return new ResponseEntity<>(zone, HttpStatus.OK);
     }
  
@@ -163,9 +164,33 @@ public class ApplicationDamagedController {
     }
  
     @GetMapping("/campuses")
-    public ResponseEntity<List<Campus>> getAllCampuses() {
-        List<Campus> campuses = applicationDamagedService.getAllCampuses();
-        return new ResponseEntity<>(campuses, HttpStatus.OK);
+public ResponseEntity<List<GenericDropdownDTO>> getActiveCampusesForDropdown() {
+        
+        // 1. Call the service layer to get the filtered DTO list
+        List<GenericDropdownDTO> activeCampuses = applicationDamagedService.getActiveCampusesDropdown();
+        
+        // 2. Return the list with an OK (200) status code
+        if (activeCampuses.isEmpty()) {
+            // Return 204 No Content if the list is empty, or 200 OK with an empty list
+            return ResponseEntity.ok(activeCampuses); 
+        }
+        
+        return ResponseEntity.ok(activeCampuses);
+    }
+    
+    @GetMapping("/dgmcampuses")
+    public ResponseEntity<List<GenericDropdownDTO>> getDgmCampusesForDropdown() {
+        
+        // 1. Call the service layer to execute the JPQL query
+        List<GenericDropdownDTO> campuses = applicationDamagedService.getDgmCampusesDropdown();
+        
+        // 2. Return a 200 OK response with the list of DTOs
+        if (campuses.isEmpty()) {
+            // Optional: Return 204 No Content if the list is empty
+            return ResponseEntity.noContent().build();
+        }
+        
+        return ResponseEntity.ok(campuses);
     }
  
     @PostMapping("/status")
