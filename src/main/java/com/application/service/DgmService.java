@@ -289,6 +289,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -344,7 +345,7 @@ public class DgmService {
                 .collect(Collectors.toList());
     }
 
-//    @Cacheable("cities")
+    @Cacheable("cities")
     public List<GenericDropdownDTO> getAllCities() {
         final int ACTIVE_STATUS = 1;
         
@@ -370,8 +371,7 @@ public class DgmService {
                 .collect(Collectors.toList());
     }
 
-//    @Cacheable(cacheNames = "campusesByZone", key = "#zoneId")
- // In your Service class (e.g., ApplicationService)
+    @Cacheable(cacheNames = "campusesByZone", key = "#zoneId")
     public List<GenericDropdownDTO> getCampusesByZoneId(int zoneId) {
         // Call the new repository method
         return campusRepository.findActiveCampusesByZoneId(zoneId).stream()
@@ -381,6 +381,7 @@ public class DgmService {
                 .collect(Collectors.toList());
     }
     
+  @Cacheable(cacheNames = "campusforzonalaccountant", key = "#empId")
     public List<GenericDropdownDTO> getCampusesByEmployeeId(int empId) {
     	List<Integer> zoneIds = zonalAccountantRepository.findZoneIdByEmployeeId(empId);
         if (zoneIds == null || zoneIds.isEmpty()) {
@@ -456,11 +457,13 @@ public class DgmService {
         return new EmployeeApplicationsDTO(employeeId, availableApplications, availableApplications.size());
     }
 
-//    @Cacheable(cacheNames = "mobileNumberByEmpId", key = "#empId")
+    @Cacheable(value = "mobileNumberByEmpId", key = "#empId")
     public String getMobileNumberByEmpId(int empId) {
         return employeeRepository.findMobileNoByEmpId(empId);
     }
     
+    
+  @Cacheable(cacheNames = "getDgmforCampus", key = "#campusId")
     public List<GenericDropdownDTO> getDgmEmployeesForCampus(int campusId) {
         // 1. Find the Campus by ID
         Optional<Campus> campusOptional = campusRepository.findById(campusId);
@@ -495,7 +498,7 @@ public class DgmService {
         // return balanceTrackRepository.getAppFromByEmployeeAndAcademicYear(employeeId, academicYearId);
     }
     
-    
+//  @Cacheable(cacheNames = "getAppRange", key = "{#academicYearId, #employeeId}")
     public AppRangeDTO getAppRange(int empId, int academicYearId) {
         // Fetch distribution data
         AppDistributionDTO distDTO = distributionRepository

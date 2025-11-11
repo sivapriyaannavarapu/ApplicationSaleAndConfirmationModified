@@ -30,7 +30,7 @@ public class DistributionPosts {
 	@Autowired
 	private CampusService dgmService;
 	
-	@PostMapping("/zone-save")
+	@PostMapping("/zone-save")//used
 	public ResponseEntity<String> saveDistribution(@RequestBody DistributionRequestDTO request) {
 	    
 	    // ADD THIS LINE FOR DEBUGGING
@@ -45,7 +45,7 @@ public class DistributionPosts {
 	    }
 	}
 	
-	 @PostMapping("/dgm-save")
+	 @PostMapping("/dgm-save")//used
 	    public ResponseEntity<String> submitForm(@RequestBody FormSubmissionDTO formDto) {
 	        try {
 	            applicationService.submitForm(formDto);
@@ -56,7 +56,7 @@ public class DistributionPosts {
 	        }
 	    }
 	 
-	 @PostMapping("/campus-save")
+	 @PostMapping("/campus-save")//used
 	    public ResponseEntity<String> submitForm(@RequestBody DgmToCampusFormDTO formDto) {
 	        try {
 	            dgmService.submitDgmToCampusForm(formDto);

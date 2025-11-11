@@ -16,7 +16,6 @@ import com.application.dto.UserAppSoldDTO;
 import com.application.service.UserAppSoldService;
  
 @RestController
-// NOTE: I've updated the base path to be more general for all performance analytics
 @RequestMapping("/api/performance")
 public class UserAppSoldController {
  
@@ -71,7 +70,7 @@ public class UserAppSoldController {
 		    return userAppSoldService.getAllGraphs();
 		}
 	 
-	 @GetMapping("/top_drop_rate")
+	 @GetMapping("/top_drop_rate")//used
 	    public ResponseEntity<List<RateResponseDTO>> getAllRateData() {
 	        return ResponseEntity.ok(userAppSoldService.getAllRateData());
 	    }

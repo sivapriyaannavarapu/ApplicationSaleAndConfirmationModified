@@ -67,29 +67,29 @@ public class StudentAdmissionController {
         }
     }
     
-    @GetMapping("/{pinCode}")
+    @GetMapping("/{pinCode}")//used/n
     public PinCodeLocationDTO getLocationByPinCode(@PathVariable int pinCode) {
         return studentAdmissionService.getLocationByPinCode(pinCode);
     }
     
-    @GetMapping("/city/branchtype/{campusId}")
+    @GetMapping("/city/branchtype/{campusId}")//used/n
     public CampusDetailsDTO getCampusDetails(@PathVariable int campusId) {
         return studentAdmissionService.getCampusDetails(campusId);
     }
     
  
     // --- Endpoints for Populating Dropdowns ---
-    @GetMapping("/admission-types")
+    @GetMapping("/admission-types")//used/c
     public List<GenericDropdownDTO> getAdmissionTypes() {
         return studentAdmissionService.getAllAdmissionTypes();
     }
  
-    @GetMapping("/student-types")
+    @GetMapping("/student-types")//used/c
     public List<GenericDropdownDTO> getStudentTypes() {
         return studentAdmissionService.getAllStudentTypes();
     }
  
-    @GetMapping("/genders")
+    @GetMapping("/genders")//used/c
     public List<GenericDropdownDTO> getGenders() {
         return studentAdmissionService.getAllGenders();
     }
@@ -106,23 +106,23 @@ public class StudentAdmissionController {
     
 // ... inside the controller class
  
-    @GetMapping("/districts/{stateId}")
+    @GetMapping("/districts/{stateId}")//used/c
     public List<GenericDropdownDTO> getDistrictsByState(@PathVariable int stateId) {
         return studentAdmissionService.getDistrictsByState(stateId);
     }
  
-    @GetMapping("/mandals/{districtId}")
+    @GetMapping("/mandals/{districtId}")//used/c
     public List<GenericDropdownDTO> getMandalsByDistrict(@PathVariable int districtId) {
         return studentAdmissionService.getMandalsByDistrict(districtId);
     }
  
-    @GetMapping("/cities/{districtId}")
+    @GetMapping("/cities/{districtId}")//used/c
     public List<GenericDropdownDTO> getCitiesByDistrict(@PathVariable int districtId) {
         return studentAdmissionService.getCitiesByDistrict(districtId);
     }
     
 // ... inside the controller class
-    @GetMapping("/organizations")
+    @GetMapping("/organizations")//used/c
     public List<GenericDropdownDTO> getAllOrganizations() {
         return studentAdmissionService.getAllOrganizations();
     }
@@ -131,14 +131,14 @@ public class StudentAdmissionController {
      * Endpoint to get banks for a selected organization.
      * Example URL: GET http://localhost:8080/api/student-admissions/banks/1
      */
-    @GetMapping("/banks/{orgId}")
+    @GetMapping("/banks/{orgId}")//used/c
     public List<GenericDropdownDTO> getBanksByOrganization(@PathVariable int orgId) {
         return studentAdmissionService.getBanksByOrganization(orgId);
     }
    
  
  
-    @GetMapping("/all/Studentclass")
+    @GetMapping("/all/Studentclass")//used/c
     public List<GenericDropdownDTO> getAllStudentClass() {
         return studentAdmissionService.getAllStudentclass();
     }
@@ -158,7 +158,7 @@ public class StudentAdmissionController {
      * Endpoint to get branches for a selected organization and bank.
      * Example URL: GET http://localhost:8080/api/student-admissions/branches/1/101
      */
-    @GetMapping("/branches/{orgId}/{bankId}")
+    @GetMapping("/branches/{orgId}/{bankId}")//used/c
     public List<GenericDropdownDTO> getBranchesByOrganizationAndBank(
             @PathVariable int orgId,
             @PathVariable int bankId) {
@@ -179,7 +179,7 @@ public class StudentAdmissionController {
     }
     
  
-    @GetMapping("/quotas")
+    @GetMapping("/quotas")//used/c
     public List<GenericDropdownDTO> getAllQuotas() {
         return studentAdmissionService.getAllQuotas();
     }
@@ -192,11 +192,11 @@ public class StudentAdmissionController {
 //        }
 //        return ResponseEntity.ok(employees);
 //    }
-    @GetMapping("/authorizedBy/all")
+    @GetMapping("/authorizedBy/all")//used/c
     public List<GenericDropdownDTO> getAllEmployees() {
         return studentAdmissionService.getAllEmployees();
     }
-    @GetMapping("/concessionReson/all")
+    @GetMapping("/concessionReson/all")//used/c
     public List<GenericDropdownDTO> getAllConcessionReasons() {
         return studentAdmissionService.getAllConcessionReasons();
     }
@@ -214,7 +214,7 @@ public class StudentAdmissionController {
 //        return studentAdmissionService.getOrientationsByClassId(classId);
 //    }
     
-    @GetMapping("/orientations/by-class/{classId}/cmps/{cmpsId}")
+    @GetMapping("/orientations/by-class/{classId}/cmps/{cmpsId}")//used/
     public List<OrientationDTO> getDistinctActiveOrientations(
             @PathVariable int classId, 
             @PathVariable int cmpsId) {
@@ -223,19 +223,19 @@ public class StudentAdmissionController {
         return studentAdmissionService.getDistinctActiveOrientationsByClassIdAndCmpsId(classId, cmpsId);
     }
     
-    @GetMapping("/classes/by-campus/{campusId}")
+    @GetMapping("/classes/by-campus/{campusId}")//used/c
     public List<ClassDTO> getClasses(@PathVariable int campusId) {
         return studentAdmissionService.getClassesByCampusId(campusId);
     }
  
     
-    @GetMapping("Type_of_school")
+    @GetMapping("Type_of_school")//used/c
     public List<GenericDropdownDTO> getAllSchoolTypes() 
     {      
     	return studentAdmissionService.getAllSchoolTypes(); 
     }
     
-    @PostMapping("/concessiontype_ids")
+    @PostMapping("/concessiontype_ids")//used
     public ResponseEntity<List<ConcessionTypeDTO>> getConcessionTypesByNames(
             @RequestBody List<String> concTypes) {
 
@@ -243,46 +243,6 @@ public class StudentAdmissionController {
         return ResponseEntity.ok(result);
     }
     
-    
-    
-     
-    //    @GetMapping("/branches/{orgId}/{orgBankId}")
-//    public List<GenericDropdownDTO> getBranchesByOrganizationAndBank(
-//            @PathVariable int org_id,
-//            @PathVariable int org_bank_id) {
-//        return studentAdmissionService.getBranchesByOrganizationAndBank(org_id, org_bank_id);
-//    }
- 
-//    @GetMapping("/courses")
-//    public List<GenericDropdownDTO> getCourses() {
-//        return studentAdmissionService.getAllCourses();
-//    }
- 
-//    @GetMapping("/course-batches")
-//    public List<GenericDropdownDTO> getCourseBatches() {
-//        return studentAdmissionService.getAllCourseBatches();
-//    }
-//
-//    @GetMapping("/states")
-//    public List<GenericDropdownDTO> getStates() {
-//        return studentAdmissionService.getAllStates();
-//    }
-//
-//    @GetMapping("/districts/{stateId}")
-//    public List<GenericDropdownDTO> getDistrictsByState(@PathVariable int stateId) {
-//        return studentAdmissionService.getDistrictsByState(stateId);
-//    }
-//
-//    @GetMapping("/school-types")
-//    public List<GenericDropdownDTO> getSchoolTypes() {
-//        return studentAdmissionService.getAllSchoolTypes();
-//    }
-//
-//    @GetMapping("/quotas")
-//    public List<GenericDropdownDTO> getQuotas() {
-//        return studentAdmissionService.getAllQuotas();
-//    }
-//
     @GetMapping("/relation-types")
     public List<GenericDropdownDTO> getRelationTypes() {
         return studentAdmissionService.getAllStudentRelations();
@@ -346,12 +306,12 @@ public class StudentAdmissionController {
 //    }
 //
 //    // --- NEW DROPDOWN ENDPOINTS ---
-    @GetMapping("/religions")
+    @GetMapping("/religions")//used/
     public List<GenericDropdownDTO> getReligions() {
         return studentAdmissionService.getAllReligions();
     }
 
-    @GetMapping("/castes")
+    @GetMapping("/castes")//used/
     public List<GenericDropdownDTO> getCastes() {
         return studentAdmissionService.getAllCastes();
     }

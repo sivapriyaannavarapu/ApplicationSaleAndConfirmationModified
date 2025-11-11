@@ -357,7 +357,7 @@ public class CampusService {
                 .collect(Collectors.toList());
     }
 
-//    @Cacheable("districts")
+    @Cacheable("districts")
     public List<District> getAllDistricts() {
         return districtRepository.findAll();
     }
@@ -369,7 +369,7 @@ public class CampusService {
                 .collect(Collectors.toList());
     }
 
-//    @Cacheable(cacheNames = "citiesByDistrict", key = "#districtId")
+    @Cacheable(cacheNames = "citiesByDistrict", key = "#districtId")
     public List<GenericDropdownDTO> getCitiesByDistrictId(int districtId) {
     	
     	final int ACTIVE_STATUS = 1;
@@ -378,7 +378,7 @@ public class CampusService {
                 .collect(Collectors.toList());
     }
 
-//    @Cacheable(cacheNames = "campusesByCity", key = "#cityId")
+    @Cacheable(cacheNames = "campusesByCity", key = "#cityId")
     public List<GenericDropdownDTO> getCampusesByCityId(int cityId) {
         return campusRepository.findByCityCityId(cityId).stream()
                 .map(c -> new GenericDropdownDTO(c.getCampusId(), c.getCampusName()))
@@ -403,6 +403,7 @@ public class CampusService {
                 .collect(Collectors.toList());
     }
     
+  @Cacheable(cacheNames = "prosByCampus", key = "#campusId")
 public List<GenericDropdownDTO> getEmployeeDropdownByCampus(int campusId) {
         
         // 1. Get the list of emp_id's from CampusProView based on campusId

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.application.dto.AppStatusTrackDTO;
@@ -105,6 +106,7 @@ public class AppStatusTrackService {
         return (int) (((double) (currentValue - previousValue) / previousValue) * 100);
     }
     
+    @Cacheable(value = "dgmEmployees")
     public List<GenericDropdownDTO> getAllDgmEmployees() {
         return dgmRepository.findAllDgmEmployees();
     }

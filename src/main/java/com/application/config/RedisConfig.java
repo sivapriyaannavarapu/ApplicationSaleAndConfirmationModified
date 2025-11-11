@@ -79,127 +79,57 @@ public class RedisConfig {
  
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
 
-        //damaged
-//        cacheConfigurations.put("appStatusDetails", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("appStatusTrackView", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("zoneEmployees", defaultConfig.entryTtl(Duration.ofMinutes(2))); 
-//        cacheConfigurations.put("allCampuses", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("allStatuses", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("allZones", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("campusesByDgm", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("campusesByZone", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("employeesByCampus", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        //confirmation
-//        cacheConfigurations.put("studentDetails", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("academicYears", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("streams", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("programs", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("examPrograms", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("courseTracks", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("courseBatches", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("sections", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("concessionReasons", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("languages", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("foodTypes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("programsByStream", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("dropdownAcademicYears", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("streamsByOrientation", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("programsByOrientation", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("examProgramsByProgram", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("batchesByOrientation", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("batchDetails", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("sectionsByBatch", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("campusAndZone", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("courseFee", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        //appstatustrackview
-//        cacheConfigurations.put("appStatusByCampus", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        //appstatustrack
-//        cacheConfigurations.put("dashboardCards", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("dashboardCardsByEmployee", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        //userappsold
-//        cacheConfigurations.put("topRatedZones", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("dropRatedZones", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("topRatedDgms", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("dropRatedDgms", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("topRatedCampus", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("dropRatedCampus", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("analyticsByEntity", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        //distributiongettableservice
-//        cacheConfigurations.put("distributionsByEmployee", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        //applicationsale
-//        cacheConfigurations.put("religions", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("castes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("admissionTypes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("genders", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("campuses", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("studentClasses", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("studyTypes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("quotas", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("employees", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("schoolTypes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("concessionReasons", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("bloodGroups", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("paymentModes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("orientationsByClass", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("classesByCampus", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("studentTypes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("studentRelations", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("studyTypesByCampusAndClass", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("orientationsByCampusClassStudyType", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("orientationBatchesByCriteria", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("batchDetails", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("orientationsByCampus", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("districtsByState", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("mandalsByDistrict", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("citiesByDistrict", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("orientationFee", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("organizations", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("banksByOrganization", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("bankDetails", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("branchesByOrgAndBank", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        //zoneservice
-//        cacheConfigurations.put("academicYears", defaultConfig.entryTtl(Duration.ofMinutes(2)));
         cacheConfigurations.put("states", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("citiesByState", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("zonesByCity", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("issuableEmployees", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("appEndNo", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("employeesByZone", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("nextAppNumber", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("appNumberRanges", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("balanceTrack", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("batchesByOrientation", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("BloodGroupTypes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+//        cacheConfigurations.put("orientationAndBatchDetails", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+//        cacheConfigurations.put("orientationFee", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+//      cacheConfigurations.put("getAppRange", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("allZones", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("foodTypes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("occupations", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("sectors", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("orientationsByCampusAndClass", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("campusesByBusinessType", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("allCampuses", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("dgmCampuses", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("allstatustable", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("dgmEmployees", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("academicYears", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("citiesByState", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("zonesByCity", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("employeesByZone", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("cities", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("campusesByZone", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("mobileNumberByEmpId", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("citiesByDistrict", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("prosByCampus", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("districts", defaultConfig.entryTtl(Duration.ofMinutes(2)));
 //        //dgmservice
-//        cacheConfigurations.put("academicYears", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("cities", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("zones", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("campuses", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("zonesByCity", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("campusesByZone", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("issuedToTypes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("availableAppNumberRanges", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("employeeApplications", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("mobileNumberByEmpId", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("nextAppNumber", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("balanceTrack", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        //campusservice
-//     // Static/Semi-Static Data (10-minute TTL)
-//        cacheConfigurations.put("academicYears", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("states", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("districts", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("districtsByState", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("citiesByDistrict", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("campusesByCity", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("campaignAreas", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("issuedToTypes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("campusByCampaign", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("campaignsByCity", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("prosByCampus", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("availableAppNumberRanges", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("mobileNumberByEmpId", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("employeeApplications", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("nextAppNumber", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        cacheConfigurations.put("balanceTrack", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-//        
+        cacheConfigurations.put("getDgmforCampus", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+//        cacheConfigurations.put("pinCode", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+//        cacheConfigurations.put("campusdetails", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("admissionTypes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("studentTypes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("genders", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("districtsByState", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("mandalsByDistrict", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("citiesByDistrict", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("organizations", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("banksByOrganization", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("studentClasses", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("quotas", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("employees", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("concessionReasons", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("classesByCampus", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("schoolTypes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("religions", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("castes", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("campusforzonalaccountant", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("campusesByCity", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("branchesByOrgAndBank", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+
+      
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)

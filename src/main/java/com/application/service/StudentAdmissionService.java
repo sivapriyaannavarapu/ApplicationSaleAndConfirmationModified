@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -190,28 +191,28 @@ public class StudentAdmissionService {
     }
  
  
-//    @Cacheable("religions")
+    @Cacheable("religions")
     public List<GenericDropdownDTO> getAllReligions() {
         return religionRepo.findAll().stream()
                 .map(r -> new GenericDropdownDTO(r.getReligion_id(), r.getReligion_type()))
                 .collect(Collectors.toList());
     }
  
-//    @Cacheable("castes")
+    @Cacheable("castes")
     public List<GenericDropdownDTO> getAllCastes() {
         return casteRepo.findAll().stream()
                 .map(c -> new GenericDropdownDTO(c.getCaste_id(), c.getCaste_type()))
                 .collect(Collectors.toList());
     }
     
-//    @Cacheable("admissionTypes")
+    @Cacheable("admissionTypes")
     public List<GenericDropdownDTO> getAllAdmissionTypes() {
         return admissionTypeRepo.findAll().stream()
                 .map(t -> new GenericDropdownDTO(t.getAdms_type_id(), t.getAdms_type_name()))
                 .collect(Collectors.toList());
     }
  
-//    @Cacheable("genders")
+    @Cacheable("genders")
     public List<GenericDropdownDTO> getAllGenders() {
         return genderRepo.findAll().stream().map(g -> new GenericDropdownDTO(g.getGender_id(), g.getGenderName()))
                 .collect(Collectors.toList());
@@ -223,7 +224,7 @@ public class StudentAdmissionService {
                 .collect(Collectors.toList());
     }
     
-//    @Cacheable("studentClasses")
+    @Cacheable("studentClasses")
     public List<GenericDropdownDTO> getAllStudentclass() {
         return classRepo.findAll().stream()
                 .map(studentClass -> new GenericDropdownDTO(studentClass.getClassId(), studentClass.getClassName()))
@@ -236,14 +237,14 @@ public class StudentAdmissionService {
         return studyTypeOptional.orElse(null);
     }
     
-//    @Cacheable("quotas")
+    @Cacheable("quotas")
     public List<GenericDropdownDTO> getAllQuotas() {
         return quotaRepo.findAll().stream()
                 .map(quota -> new GenericDropdownDTO(quota.getQuota_id(), quota.getQuota_name()))
                 .collect(Collectors.toList());
     }
     
-//    @Cacheable("employees")
+    @Cacheable("employees")
     public List<GenericDropdownDTO> getAllEmployees() {
         // 1. Call the repository method to fetch only employees where is_active is 1
         List<Employee> activeEmployees = employeeRepo.findByIsActive(1); 
@@ -257,12 +258,12 @@ public class StudentAdmissionService {
                 .collect(Collectors.toList());
     }
     
-//    @Cacheable("schoolTypes")
+    @Cacheable("schoolTypes")
     public List<GenericDropdownDTO> getAllSchoolTypes()
     {         return campusSchoolTypeReposirtory.findAll().stream()            
     		.map(schoolType -> new GenericDropdownDTO(schoolType.getSchool_type_id(), schoolType.getSchool_type_name())) .collect(Collectors.toList()); }
     
-//    @Cacheable("concessionReasons")
+    @Cacheable("concessionReasons")
     public List<GenericDropdownDTO> getAllConcessionReasons() {
         return concessionReasonRepo.findAll().stream()
                 .map(reason -> new GenericDropdownDTO(reason.getConc_reason_id(), reason.getConc_reason()))
@@ -288,7 +289,7 @@ public class StudentAdmissionService {
         return cmpsOrientationBatchFeeViewRepo.findOrientationsByClassId(classId);
     }
     
-//    @Cacheable(value = "classesByCampus", key = "#campusId")
+    @Cacheable(value = "classesByCampus", key = "#campusId")
     public List<ClassDTO> getClassesByCampusId(int campusId) {
         return cmpsOrientationBatchFeeViewRepo.findClassesByCampusId(campusId);
     }
@@ -297,7 +298,7 @@ public class StudentAdmissionService {
         return cmpsOrientationBatchFeeViewRepo.findDistinctOrientationsByClassIdAndCmpsId(classId, cmpsId);
     }
     
-//    @Cacheable("studentTypes")
+    @Cacheable("studentTypes")
     public List<GenericDropdownDTO> getAllStudentTypes() {
         return studentTypeRepo.findAll().stream()
                 .map(t -> new GenericDropdownDTO(t.getStud_type_id(), t.getStud_type())).collect(Collectors.toList());
@@ -353,21 +354,21 @@ public class StudentAdmissionService {
         );
     }
     
-//    @Cacheable(value = "districtsByState", key = "#stateId")
+    @Cacheable(value = "districtsByState", key = "#stateId")
     public List<GenericDropdownDTO> getDistrictsByState(int stateId) {
         return districtRepo.findByStateStateId(stateId).stream()
                 .map(d -> new GenericDropdownDTO(d.getDistrictId(), d.getDistrictName()))
                 .collect(Collectors.toList());
     }
  
-//    @Cacheable(value = "mandalsByDistrict", key = "#districtId")
+    @Cacheable(value = "mandalsByDistrict", key = "#districtId")
     public List<GenericDropdownDTO> getMandalsByDistrict(int districtId) {
         return mandalRepo.findByDistrictDistrictId(districtId).stream()
                 .map(m -> new GenericDropdownDTO(m.getMandal_id(), m.getMandal_name()))
                 .collect(Collectors.toList());
     }
     
-//    @Cacheable(value = "citiesByDistrict", key = "#districtId")
+    @Cacheable(value = "citiesByDistrict", key = "#districtId")
     public List<GenericDropdownDTO> getCitiesByDistrict(int districtId) {
     	
     	final int ACTIVE_STATUS = 1;
@@ -390,14 +391,14 @@ public class StudentAdmissionService {
         return new CourseFeeDTO(fee);
     }
     
-//    @Cacheable("organizations")
+    @Cacheable("organizations")
     public List<GenericDropdownDTO> getAllOrganizations() {
         return organizationRepo.findAll().stream()
                 .map(org -> new GenericDropdownDTO(org.getOrgId(), org.getOrg_name()))
                 .collect(Collectors.toList());
     }
  
-//    @Cacheable(value = "banksByOrganization", key = "#orgId")
+    @Cacheable(value = "banksByOrganization", key = "#orgId")
     public List<GenericDropdownDTO> getBanksByOrganization(int orgId) {
         return orgBankDetailsRepo.findDistinctBanksByOrganizationId(orgId).stream()
                 .map(bank -> new GenericDropdownDTO(bank.getOrg_bank_id(), bank.getBank_name()))
@@ -417,18 +418,20 @@ public class StudentAdmissionService {
         return new BankDetailsDTO(details.getIfsc_code());
     }
  
-//    @Cacheable(value = "branchesByOrgAndBank", key = "{#orgId, #bankId}")
+    @Cacheable(value = "branchesByOrgAndBank", key = "{#orgId, #bankId}")
     public List<GenericDropdownDTO> getBranchesByOrganizationAndBank(int orgId, int bankId) {
         return orgBankDetailsRepo.findDistinctBranchesByOrganizationAndBankId(orgId, bankId).stream()
                 .map(branch -> new GenericDropdownDTO(branch.getOrg_bank_branch_id(), branch.getBranch_name()))
                 .collect(Collectors.toList());
     }
     
+//  @Cacheable(value = "pinCode", key = "#pinCode")
     public PinCodeLocationDTO getLocationByPinCode(int pinCode) {
         return pinCodeRepository.findStateAndDistrictByPinCode(pinCode)
                 .orElseThrow(() -> new RuntimeException("No data found for pin code: " + pinCode));
     }
     
+//  @Cacheable(value = "campusdetails", key = "#campusId")
     public CampusDetailsDTO getCampusDetails(int campusId) {
         return campusRepository.findCampusDetailsById(campusId)
                 .orElseThrow(() -> new RuntimeException("Campus not found for ID: " + campusId));

@@ -41,7 +41,7 @@ public class DistributionUpdates {
 	@Autowired
 	private BalanceTrackRepository balanceTrackRepository;
 	
-	 @PutMapping("/update-zone/{id}")
+	 @PutMapping("/update-zone/{id}")//used
      public ResponseEntity<String> updateDistribution(@PathVariable int id, @RequestBody DistributionRequestDTO request) {
          try {
              distributionService.updateDistribution(id, request);
@@ -51,7 +51,7 @@ public class DistributionUpdates {
          }
      }
   
-     @PutMapping("/update-dgm/{id}")
+     @PutMapping("/update-dgm/{id}")//used
      public ResponseEntity<String> updateDistribution(@PathVariable Integer id, @RequestBody FormSubmissionDTO formDto) {
          try {
              applicationService.updateForm(id, formDto);
@@ -61,7 +61,7 @@ public class DistributionUpdates {
          }
      }
     
-     @PutMapping("/update-campus/{Id}")
+     @PutMapping("/update-campus/{Id}")//used
      public ResponseEntity<Void> updateDgmToCampusForm(
              @PathVariable int distributionId,
              @RequestBody DgmToCampusFormDTO formDto) {

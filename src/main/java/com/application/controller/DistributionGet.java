@@ -57,32 +57,32 @@ public class DistributionGet {
         this.schoolDetailsRepository = schoolDetailsRepository;
     }
 	
-	@GetMapping("/academic-years")
+	@GetMapping("/academic-years")//used/c
 	public ResponseEntity<List<AcademicYear>> getAcademicYears() {
 		return ResponseEntity.ok(distributionService.getAllAcademicYears());
 	}
 
-	@GetMapping("/states")
+	@GetMapping("/states")//used/c
 	public ResponseEntity<List<State>> getStates() {
 		return ResponseEntity.ok(distributionService.getAllStates());
 	}
 
-	@GetMapping("/city/{stateId}")
+	@GetMapping("/city/{stateId}")//used/c
 	public ResponseEntity<List<City>> getCitiesByState(@PathVariable int stateId) {
 		return ResponseEntity.ok(distributionService.getCitiesByState(stateId));
 	}
 
-	@GetMapping("/zones/{cityId}")
+	@GetMapping("/zones/{cityId}")//used/c
 	public ResponseEntity<List<Zone>> getZonesByCity(@PathVariable int cityId) {
 		return ResponseEntity.ok(distributionService.getZonesByCity(cityId));
 	}
 
-	@GetMapping("/employees")
+	@GetMapping("/employees")//used
 	public ResponseEntity<List<Employee>> getEmployees() {
 		return ResponseEntity.ok(distributionService.getIssuableToEmployees());
 	}
 	
-	@GetMapping("/next-app-number")
+	@GetMapping("/next-app-number")//used
 	public ResponseEntity<String> getNextAppNumber(@RequestParam int academicYearId, @RequestParam int stateId,
 			@RequestParam int userId) {
 
@@ -104,7 +104,7 @@ public class DistributionGet {
         }
     }
 	
-	@GetMapping("/app-end-number")
+	@GetMapping("/app-end-number")//used
 	public ResponseEntity<Integer> getAppEndNumber(@RequestParam int stateId, @RequestParam int userId) {
 	    Integer endNo = distributionService.getAppEndNoForUser(stateId, userId);
 	    
@@ -122,7 +122,7 @@ public class DistributionGet {
 	        return employeeRepository.findMobileNoByEmpId(empId);
 	    }
 	   // GET /api/zonal-accountants/zone/1/employees
-	    @GetMapping("/zone/{zoneId}/employees")
+	    @GetMapping("/zone/{zoneId}/employees")//used/
 	    public List<EmployeesDto> getEmployeesByZone(@PathVariable int zoneId) {
 	        return distributionService.getEmployeesByZone(zoneId);
 	    }
@@ -132,32 +132,32 @@ public class DistributionGet {
 	    @Autowired
 	    private DgmService applicationService;
 	 
-	    @GetMapping("/cities")
+	    @GetMapping("/cities")//used/c
 	    public List<GenericDropdownDTO> getCities() {
 	        return applicationService.getAllCities();
 	    }
 	 
-	    @GetMapping("/campus/{zoneId}")
+	    @GetMapping("/campus/{zoneId}")//used/c
 	    public List<GenericDropdownDTO> getCampusesByZone(@PathVariable int zoneId) {
 	        return applicationService.getCampusesByZoneId(zoneId);
 	    }
 	    
-	    @GetMapping("/campusesforzonal_accountant/{empId}")
+	    @GetMapping("/campusesforzonal_accountant/{empId}")//used/c
 	    public List<GenericDropdownDTO> getCampusesByEmployee(@PathVariable int empId) {
 	        return applicationService.getCampusesByEmployeeId(empId);
 	    }
 	    
-	    @GetMapping("/campusesfordgm/{empId}")
+	    @GetMapping("/campusesfordgm/{empId}")//used
 	    public List<GenericDropdownDTO> getActiveCampusesByEmpId(@PathVariable Integer empId) {
 	        return applicationService.getActiveCampusesByEmpId(empId);
 	    }
 	    
-	    @GetMapping("/dgmforzonal_accountant/{empId}")
+	    @GetMapping("/dgmforzonal_accountant/{empId}")//used
 	    public List<GenericDropdownDTO> getActiveCampusesByEmployee(@PathVariable int empId) {
 	        return applicationService.getActiveCampusesByEmployeeId(empId);
 	    }
 	    
-	    @GetMapping("/issued-to")
+	    @GetMapping("/issued-to")//used
 	    public List<GenericDropdownDTO> getIssuedToTypes() {
 	        return applicationService.getAllIssuedToTypes();
 	    }
@@ -168,7 +168,7 @@ public class DistributionGet {
 	        return applicationService.getAvailableAppNumberRanges(academicYearId, employeeId);
 	    }
 	    
-	    @GetMapping("/mobile-no/{empId}")
+	    @GetMapping("/mobile-no/{empId}")//used/n
 	    public ResponseEntity<String> getMobileNo(@PathVariable int empId) {
 	        String mobileNumber = applicationService.getMobileNumberByEmpId(empId);
 	        if (mobileNumber != null) {
@@ -182,22 +182,22 @@ public class DistributionGet {
 	    private CampusService dgmService;
 	   
 	  
-	    @GetMapping("/districts/{stateId}")
+	    @GetMapping("/districts/{stateId}")//used
 	    public List<GenericDropdownDTO> getDistrictsByState(@PathVariable int stateId) {
 	        return dgmService.getDistrictsByStateId(stateId);
 	    }
 	 
-	    @GetMapping("/cities/{districtId}")
+	    @GetMapping("/cities/{districtId}")//used/
 	    public List<GenericDropdownDTO> getCitiesByDistrict(@PathVariable int districtId) {
 	        return dgmService.getCitiesByDistrictId(districtId);
 	    }
 	    
-	    @GetMapping("/campuses/{cityId}")
+	    @GetMapping("/campuses/{cityId}")//used/
 	    public List<GenericDropdownDTO> getCampusesByCity(@PathVariable int cityId) {
 	        return dgmService.getCampusesByCityId(cityId);
 	    }
 	    
-	    @GetMapping("/campaign-areas")
+	    @GetMapping("/campaign-areas")//used
 	    public List<GenericDropdownDTO> getAllCampaignAreas() {
 	        return dgmService.getAllCampaignAreas();
 	    }
@@ -207,7 +207,7 @@ public class DistributionGet {
 	        return dgmService.getProsByCampusId(campusId);
 	    }
 	   
-	    @GetMapping("/pros/{campusId}")
+	    @GetMapping("/pros/{campusId}")//used/c
 	    public ResponseEntity<List<GenericDropdownDTO>> getEmployeeDropdown(
 	            @PathVariable int campusId) {
 
@@ -222,7 +222,7 @@ public class DistributionGet {
 	        return ResponseEntity.ok(employees);
 	    }
 	    
-	    @GetMapping("/getalldistricts")
+	    @GetMapping("/getalldistricts")//used/
 	    public List<District> getAllDistricts()
 	    {
 	    	return campusService.getAllDistricts();
@@ -287,7 +287,7 @@ public class DistributionGet {
 	        }
 	    }
 	    
-	    @GetMapping("/range")
+	    @GetMapping("/range")//used/n
 	    public ResponseEntity<AppRangeDTO> getAppRanges(
 	            @RequestParam int empId,
 	            @RequestParam int academicYearId) {
@@ -342,7 +342,7 @@ public class DistributionGet {
 	        return ResponseEntity.ok(result);
 	    }
 	    
-	    @GetMapping("/range-info")
+	    @GetMapping("/range-info")//used/n
 	    public ResponseEntity<ApplicationRangeInfoDTO> getApplicationRangeInformation(
 	            @RequestParam int academicYearId,
 	            @RequestParam(required = false) Integer stateId, // StateId is now optional
@@ -353,7 +353,7 @@ public class DistributionGet {
 	        return ResponseEntity.ok(rangeInfo);
 	    }
 	    
-	    @GetMapping("/dgm/{campusId}")
+	    @GetMapping("/dgm/{campusId}")//used/c
 	    public ResponseEntity<List<GenericDropdownDTO>> getActiveDgmEmployeesByCampus(
 	            @PathVariable int campusId) { // Use @PathVariable
 

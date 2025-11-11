@@ -3,6 +3,7 @@ package com.application.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.application.dto.AppStatusDTO;
@@ -29,6 +30,7 @@ public class ApplicationStatusViewService {
         }
     }
     
+    @Cacheable(value = "allstatustable")
     public List<AppStatusDTO> getAllStatus() {
         return appStatusTrackViewRepository.getAllStatusData();
     }

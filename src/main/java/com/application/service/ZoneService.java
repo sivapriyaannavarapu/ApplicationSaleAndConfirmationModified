@@ -577,7 +577,7 @@ public class ZoneService {
 	}
 
 	// --- Dropdown/Helper Methods with Caching ---
-//    @Cacheable("academicYears")
+    @Cacheable("academicYears")
 	public List<AcademicYear> getAllAcademicYears() {
 		return academicYearRepository.findAll();
 	}
@@ -588,12 +588,12 @@ public class ZoneService {
 		return stateRepository.findByStatus(1);
 	}
 
-//    @Cacheable(cacheNames = "citiesByState", key = "#stateId")
+    @Cacheable(cacheNames = "citiesByState", key = "#stateId")
 	public List<City> getCitiesByState(int stateId) {
 	    final int ACTIVE_STATUS = 1;
 	    return cityRepository.findByDistrictStateStateIdAndStatus(stateId, ACTIVE_STATUS);
 	}
-//    @Cacheable(cacheNames = "zonesByCity", key = "#cityId")
+    @Cacheable(cacheNames = "zonesByCity", key = "#cityId")
 	public List<Zone> getZonesByCity(int cityId) {
 		return zoneRepository.findByCityCityId(cityId);
 	}
@@ -614,6 +614,7 @@ public class ZoneService {
 //				.collect(Collectors.toList());
 //	}
 	
+  @Cacheable(cacheNames = "employeesByZone", key = "#zoneId")
 	@Transactional(readOnly = true)  // Recommended for lazy loading
     public List<EmployeesDto> getEmployeesByZone(int zoneId) {
         // Fetch only active zonal accountants (ZonalAccountant.isActive == 1)

@@ -151,7 +151,7 @@ public class ApplicationNewConfirmationService {
         return genderRepo.findByIsActive(1); // Assuming 1 = Active
     }
     
-  @Cacheable(value = "batchesByOrientation", key = "#orientationId")
+    @Cacheable(value = "batchesByOrientation", key = "#orientationId")
     public List<BatchDTO> getBatchesByOrientation(int orientationId) {
 
         // Call the NEW repository method that returns BatchDTO directly
@@ -195,7 +195,7 @@ public class ApplicationNewConfirmationService {
         return campusRepo.findActiveCampusesByBusinessTypeName(businessTypeName);
     }
     
-    @Cacheable(value = "orientationAndBatchDetails", key = "{#orientationId, #orientationBatchId}")
+//    @Cacheable(value = "orientationAndBatchDetails", key = "{#orientationId, #orientationBatchId}")
     public Optional<OrientationBatchDetailsDTO> getDetailsByOrientationAndBatch(int orientationId, int orientationBatchId) {
         // Use the new repository method
         List<OrientationBatchDetailsDTO> detailsList =
@@ -262,7 +262,7 @@ public class ApplicationNewConfirmationService {
         return cmpsOrientationBatchFeeViewRepo.findDistinctOrientationsByCampusAndClass(campusId, classId);
     }
     
-    @Cacheable(value = "orientationFee", key = "#orientationId")
+//    @Cacheable(value = "orientationFee", key = "#orientationId")
     public Optional<OrientationFeeDTO> getOrientationFeeById(int orientationId) {
         // Use the existing repository method
         List<CmpsOrientationBatchFeeView> detailsList =

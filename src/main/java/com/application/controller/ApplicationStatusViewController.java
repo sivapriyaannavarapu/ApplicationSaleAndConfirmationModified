@@ -43,7 +43,7 @@ public class ApplicationStatusViewController {
     }
     
     
-    @GetMapping("/all_status_list")
+    @GetMapping("/all_status_list")//used/c
     public ResponseEntity<List<AppStatusDTO>> getAllStatus() {
         return ResponseEntity.ok(applicationStatusViewService.getAllStatus());
     }
