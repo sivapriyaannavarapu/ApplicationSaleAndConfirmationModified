@@ -1,15 +1,19 @@
 package com.application.controller;
  
-import com.application.dto.PerformanceDTO;
-import com.application.dto.UserAppSoldDTO;
-import com.application.service.UserAppSoldService;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
- 
-import java.util.List;
+
+import com.application.dto.FullGraphResponseDTO;
+import com.application.dto.PerformanceDTO;
+import com.application.dto.RateResponseDTO;
+import com.application.dto.UserAppSoldDTO;
+import com.application.service.UserAppSoldService;
  
 @RestController
 // NOTE: I've updated the base path to be more general for all performance analytics
@@ -61,4 +65,14 @@ public class UserAppSoldController {
 	public List<UserAppSoldDTO> getAnalyticsByEntityId(@PathVariable Integer entityId) {
 		return userAppSoldService.getAnalyticsByEntityId(entityId);
 	}
+	
+	 @GetMapping("/graph")
+	 public List<FullGraphResponseDTO> getAllGraphs() {
+		    return userAppSoldService.getAllGraphs();
+		}
+	 
+	 @GetMapping("/top_drop_rate")
+	    public ResponseEntity<List<RateResponseDTO>> getAllRateData() {
+	        return ResponseEntity.ok(userAppSoldService.getAllRateData());
+	    }
 }

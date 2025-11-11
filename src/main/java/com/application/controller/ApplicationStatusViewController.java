@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.application.dto.AppStatusDTO;
 import com.application.entity.AppStatusTrackView;
 import com.application.service.ApplicationStatusViewService;
  
@@ -39,6 +40,12 @@ public class ApplicationStatusViewController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
+    }
+    
+    
+    @GetMapping("/all_status_list")
+    public ResponseEntity<List<AppStatusDTO>> getAllStatus() {
+        return ResponseEntity.ok(applicationStatusViewService.getAllStatus());
     }
 
 }

@@ -39,7 +39,7 @@ public class BalanceTrack {
     private int isActive;
 
     @Column(name = "created_by")
-    private int createdBy;//default 1
+    private int createdBy;
 
     @ManyToOne
     @JoinColumn(name = "acdc_year_id", referencedColumnName = "acdc_year_id")

@@ -35,6 +35,7 @@ import com.application.repository.EmployeeRepository;
 import com.application.repository.StatusRepository;
 import com.application.repository.ZoneRepository;
 
+import jakarta.persistence.Cacheable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;

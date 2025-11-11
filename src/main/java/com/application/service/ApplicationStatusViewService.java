@@ -3,9 +3,9 @@ package com.application.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import com.application.dto.AppStatusDTO;
 import com.application.entity.AppStatusTrackView;
 import com.application.repository.AppStatusTrackViewRepository;
  
@@ -27,5 +27,9 @@ public class ApplicationStatusViewService {
         } catch (Exception e) {
             throw e;
         }
+    }
+    
+    public List<AppStatusDTO> getAllStatus() {
+        return appStatusTrackViewRepository.getAllStatusData();
     }
 }

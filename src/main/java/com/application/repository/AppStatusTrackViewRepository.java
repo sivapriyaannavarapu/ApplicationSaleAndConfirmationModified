@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.application.dto.AppStatusDTO;
 import com.application.entity.AppStatusTrackView;
 
 @Repository
@@ -23,5 +24,9 @@ public interface AppStatusTrackViewRepository extends JpaRepository<AppStatusTra
 	
 	@Query("SELECT a FROM AppStatusTrackView a WHERE a.num = :num AND a.cmps_name = :cmpsName")
 	Optional<AppStatusTrackView> findByNumAndCmps_name(@Param("num") int num, @Param("cmpsName") String cmpsName);
+	
+	 @Query("SELECT new com.application.dto.AppStatusDTO(a.num, a.status, a.cmps_name, a.zone_name) " +
+	           "FROM AppStatusTrackView a")
+	    List<AppStatusDTO> getAllStatusData();
 
 }

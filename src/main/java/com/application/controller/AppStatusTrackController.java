@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.application.dto.GenericDropdownDTO;
 import com.application.dto.MetricCardDTO;
-import com.application.entity.Employee;
 import com.application.service.AppStatusTrackService;
 
 @RestController
@@ -30,7 +30,7 @@ public class AppStatusTrackController {
     }
     
     @GetMapping("/dgm-employees")
-    public List<Employee> getAllDgmEmployees() {
+    public List<GenericDropdownDTO> getAllDgmEmployees() {
         return appStatusTrackService.getAllDgmEmployees();
     }
 }

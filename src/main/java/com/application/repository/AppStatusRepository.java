@@ -10,12 +10,12 @@ import org.springframework.stereotype.Repository;
 import com.application.entity.AppStatus;
 
 @Repository
-public interface AppStatusRepository extends JpaRepository<AppStatus, Integer>{
-	
-	@Query("SELECT a FROM AppStatus a WHERE a.app_no = :appNo")
+public interface AppStatusRepository extends JpaRepository<AppStatus, Integer> {
+
+    @Query("SELECT a FROM AppStatus a WHERE a.app_no = :appNo AND a.is_active = 1")
     Optional<AppStatus> findByAppNo(Integer appNo);
-	
-	@Query("SELECT a FROM AppStatus a WHERE a.app_no = :appNo")
+
+    @Query("SELECT a FROM AppStatus a WHERE a.app_no = :appNo AND a.is_active = 1")
     Optional<AppStatus> findByApplicationNumber(@Param("appNo") int appNo);
 
 }

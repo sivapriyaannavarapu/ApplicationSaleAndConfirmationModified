@@ -1,5 +1,6 @@
 package com.application.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -24,6 +25,9 @@ public class StateApp {
 	private float amount;
 	private int created_by;	
 	private String app_fee;
+	
+	@Column(name = "is_active")
+	private int isActive;
 	
 	@ManyToOne
 	@JoinColumn(name = "acdc_year_id")

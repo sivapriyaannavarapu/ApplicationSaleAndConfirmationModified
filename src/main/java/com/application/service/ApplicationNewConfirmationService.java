@@ -116,7 +116,6 @@ public class ApplicationNewConfirmationService {
     @Autowired private GenderRepository genderRepo;
     @Autowired private ConcessionTypeRepository concessionTypeRepo;
     @Autowired private ConcessionReasonRepository concessionReasonRepo;
-//    @Autowired private EmployeeRepository employeeRepo;
     @Autowired 
     private StudentRelationRepository studentRelationRepo;
     @Autowired 
@@ -151,10 +150,8 @@ public class ApplicationNewConfirmationService {
     public List<Gender> getActiveGenders() {
         return genderRepo.findByIsActive(1); // Assuming 1 = Active
     }
- // ... (logger definition) ...
-    // ... (imports) ...
     
-  //@Cacheable(value = "batchesByOrientation", key = "#orientationId")
+  @Cacheable(value = "batchesByOrientation", key = "#orientationId")
     public List<BatchDTO> getBatchesByOrientation(int orientationId) {
 
         // Call the NEW repository method that returns BatchDTO directly

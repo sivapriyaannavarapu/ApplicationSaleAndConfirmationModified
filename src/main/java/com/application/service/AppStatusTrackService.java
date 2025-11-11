@@ -5,12 +5,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.application.dto.AppStatusTrackDTO;
+import com.application.dto.GenericDropdownDTO;
 import com.application.dto.MetricCardDTO;
-import com.application.entity.Employee;
 import com.application.repository.AppStatusTrackRepository;
 import com.application.repository.DgmRepository;
 
@@ -106,7 +105,8 @@ public class AppStatusTrackService {
         return (int) (((double) (currentValue - previousValue) / previousValue) * 100);
     }
     
-    public List<Employee> getAllDgmEmployees() {
+    public List<GenericDropdownDTO> getAllDgmEmployees() {
         return dgmRepository.findAllDgmEmployees();
     }
+
 }
