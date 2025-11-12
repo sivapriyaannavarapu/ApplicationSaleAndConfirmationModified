@@ -16,8 +16,10 @@ import com.application.dto.MetricDTO;
 import com.application.dto.MetricsAggregateDTO;
 import com.application.dto.MetricsDataDTO;
 import com.application.dto.YearlyGraphPointDTO;
+import com.application.entity.SCEmployeeEntity;
 import com.application.repository.AcademicYearRepository;
 import com.application.repository.AppStatusTrackRepository;
+import com.application.repository.SCEmployeeRepository;
 import com.application.repository.UserAppSoldRepository;
  
 @Service
@@ -31,6 +33,9 @@ public class ApplicationAnalyticsService {
  
     @Autowired
     private AcademicYearRepository academicYearRepository;
+    
+    @Autowired
+    private SCEmployeeRepository scEmployeeRepository;
  
     // --- YEARS UPDATED ---
     private static final List<Integer> GRAPH_YEARS = Arrays.asList(2024, 2025, 2026);
@@ -39,6 +44,69 @@ public class ApplicationAnalyticsService {
     // --- END OF UPDATE ---
  
     // --- Main Public Methods ---
+    
+public CombinedAnalyticsDTO getAnalyticsForEmployee(Integer empId) {
+        
+        Optional<SCEmployeeEntity> employeeOpt = scEmployeeRepository.findById(empId);
+        
+        if (employeeOpt.isEmpty()) {
+            System.err.println("No employee found with ID: " + empId);
+            return createEmptyAnalytics("Invalid Employee", empId, "Employee not found");
+        }
+        
+        SCEmployeeEntity employee = employeeOpt.get();
+        String role = employee.getEmpStudApplicationRole();
+        
+        if (role == null) {
+             System.err.println("Employee " + empId + " has a null role.");
+             return createEmptyAnalytics("Null Role", empId, "Employee has no role");
+        }
+        
+        CombinedAnalyticsDTO analytics;
+        
+        switch (role) {
+            case "DGM":
+                System.out.println("Routing to DGM Analytics for empId: " + empId);
+                analytics = getDgmAnalytics(empId);
+                analytics.setRole("DGM");
+                analytics.setEntityName(employee.getFirstName() + " " + employee.getLastName());
+                analytics.setEntityId(empId);
+                return analytics;
+                
+            case "Zonal Account":
+                int zoneId = employee.getZoneId();
+                System.out.println("Routing to Zone Analytics for zoneId: " + zoneId);
+                analytics = getZoneAnalytics((long) zoneId);
+                analytics.setRole("Zonal Account");
+                analytics.setEntityName(employee.getZoneName());
+                analytics.setEntityId(zoneId);
+                return analytics;
+                
+            case "PRO":
+                int campusId = employee.getEmpCampusId();
+                System.out.println("Routing to Campus Analytics for campusId: " + campusId);
+                analytics = getCampusAnalytics((long) campusId);
+                analytics.setRole("PRO");
+                analytics.setEntityName(employee.getCampusName());
+                analytics.setEntityId(campusId);
+                return analytics;
+                
+            default:
+                System.err.println("Unrecognized role '" + role + "' for empId: " + empId);
+                return createEmptyAnalytics(role, empId, "Unrecognized role");
+        }
+    }
+ 
+    /**
+     * Helper to create a default empty DTO with role info.
+     */
+    private CombinedAnalyticsDTO createEmptyAnalytics(String role, Integer id, String name) {
+        CombinedAnalyticsDTO analytics = new CombinedAnalyticsDTO();
+        analytics.setRole(role);
+        analytics.setEntityId(id);
+        analytics.setEntityName(name);
+        return analytics;
+    }
  
     public CombinedAnalyticsDTO getZoneAnalytics(Long zoneId) {
         CombinedAnalyticsDTO analytics = new CombinedAnalyticsDTO();

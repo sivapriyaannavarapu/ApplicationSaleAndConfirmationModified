@@ -85,6 +85,34 @@ public class AnalyticsController {
         }
 
     }
+    
+    
+    @GetMapping("/{empId}")
+    public ResponseEntity<CombinedAnalyticsDTO> getAnalyticsByEmployeeId(
+            @PathVariable("empId") Integer empId) {
+        
+        try {
+            // Call the new "router" method in the service
+            CombinedAnalyticsDTO analytics = analyticsService.getAnalyticsForEmployee(empId);
+ 
+            // Check if the service returned empty data (e.g., employee not found or no role)
+            if (analytics.getGraphData() == null && analytics.getMetricsData() == null) {
+                // You can customize this response
+                // 404 Not Found is good if the employee ID itself was invalid
+                // 400 Bad Request is good if the employee was found but had no valid role
+                return ResponseEntity.badRequest().body(new CombinedAnalyticsDTO());
+            }
+ 
+            // Return the populated analytics object
+            return ResponseEntity.ok(analytics);
+            
+        } catch (Exception e) {
+            // Catch any unexpected errors (e.g., database connection issues)
+            System.err.println("Error in AnalyticsController: " + e.getMessage());
+            // Return a 500 Internal Server Error
+            return ResponseEntity.internalServerError().body(null);
+        }
+    }
 
 }
  
