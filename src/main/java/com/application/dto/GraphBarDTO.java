@@ -5,11 +5,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class GraphBarDTO {
-    private String year;
-    private Integer issued;
-    private Integer sold;
-}
 
+    private String year;
+
+    // percentages
+    private int issuedPercent;
+    private int soldPercent;
+
+    // actual values
+    private int issuedCount;
+    private int soldCount;
+}

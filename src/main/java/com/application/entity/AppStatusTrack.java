@@ -44,6 +44,14 @@ public class AppStatusTrack {
 
     @Column(name = "is_active")
     private int isActive;
+    
+    @ManyToOne
+    @JoinColumn(name = "zone_id")
+    private Zone zone;
+    
+    @ManyToOne
+    @JoinColumn(name = "cmps_id")
+    private Campus campus;
 
     @ManyToOne
     @JoinColumn(name = "app_issued_type_id", referencedColumnName = "app_issued_id")

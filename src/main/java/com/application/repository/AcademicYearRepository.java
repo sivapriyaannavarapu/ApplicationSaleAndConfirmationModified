@@ -15,4 +15,6 @@ public interface AcademicYearRepository extends JpaRepository<AcademicYear, Inte
 	 List<AcademicYear> findByAcdcYearIdIn(List<Integer> acdcYearIds);
 	 List<AcademicYear> findByYearIn(List<Integer> years);
 	 
+	 Optional<AcademicYear> findByYear(Integer year);
+	 
 }

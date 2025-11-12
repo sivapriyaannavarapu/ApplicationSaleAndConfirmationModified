@@ -111,4 +111,86 @@ public class AppStatusTrackService {
         return dgmRepository.findAllDgmEmployees();
     }
 
+        public List<MetricCardDTO> getMetricCards() {
+
+            // Auto-detect latest academic year
+            Integer currentYearId = appStatusTrackRepository.findLatestYearId();
+            Integer previousYearId = currentYearId - 1;
+
+            // Value (for ALL YEARS)
+            Object[] overall = appStatusTrackRepository.getOverallTotals().get(0);
+            Long overallWithPro = appStatusTrackRepository.getOverallWithPro(); // total_app where type = 4
+
+            // Percentage calculations (YEAR-WISE ONLY)
+            Object[] curr = appStatusTrackRepository.getTotalsByYear(currentYearId).get(0);
+            Object[] prev = appStatusTrackRepository.getTotalsByYear(previousYearId).get(0);
+
+            Long currProObj = appStatusTrackRepository.getWithProByYear(currentYearId);
+            Long prevProObj = appStatusTrackRepository.getWithProByYear(previousYearId);
+
+            // Convert values safely
+            int totalApp      = toInt(overall[0]);
+            int sold          = toInt(overall[1]);
+            int confirmed     = toInt(overall[2]);
+            int available     = toInt(overall[3]);
+            int issued        = toInt(overall[4]);
+            int damaged       = toInt(overall[5]);
+            int unavailable   = toInt(overall[6]);
+            int withProValue  = toInt(overallWithPro);
+
+            // Year-wise values
+            int currTotalApp     = toInt(curr[0]);
+            int currSold         = toInt(curr[1]);
+            int currConfirmed    = toInt(curr[2]);
+            int currAvailable    = toInt(curr[3]);
+            int currIssued       = toInt(curr[4]);
+            int currDamaged      = toInt(curr[5]);
+            int currUnavailable  = toInt(curr[6]);
+            int currPro          = toInt(currProObj);
+
+            int prevTotalApp     = toInt(prev[0]);
+            int prevSold         = toInt(prev[1]);
+            int prevConfirmed    = toInt(prev[2]);
+            int prevAvailable    = toInt(prev[3]);
+            int prevIssued       = toInt(prev[4]);
+            int prevDamaged      = toInt(prev[5]);
+            int prevUnavailable  = toInt(prev[6]);
+            int prevPro          = toInt(prevProObj);
+
+            // Prepare final metric card list
+            List<MetricCardDTO> list = new ArrayList<>();
+
+            list.add(new MetricCardDTO("Total Applications", totalApp, clampChange(prevTotalApp, currTotalApp), "total_applications"));
+            list.add(new MetricCardDTO("Sold", sold, clampChange(prevSold, currSold), "sold"));
+            list.add(new MetricCardDTO("Confirmed", confirmed, clampChange(prevConfirmed, currConfirmed), "confirmed"));
+            list.add(new MetricCardDTO("Available", available, clampChange(prevAvailable, currAvailable), "available"));
+            list.add(new MetricCardDTO("Issued", issued, clampChange(prevIssued, currIssued), "issued"));
+            list.add(new MetricCardDTO("Damaged", damaged, clampChange(prevDamaged, currDamaged), "damaged"));
+            list.add(new MetricCardDTO("Unavailable", unavailable, clampChange(prevUnavailable, currUnavailable), "unavailable"));
+
+            // WITH PRO — using totalApp WHERE type = 4 (correct logic)
+            list.add(new MetricCardDTO("With PRO", withProValue, clampChange(prevPro, currPro), "with_pro"));
+
+            return list;
+        }
+
+        // Safe conversion
+        private int toInt(Object o) {
+            return o == null ? 0 : ((Number) o).intValue();
+        }
+
+        // Calculate percent and clamp to [-100, 100]
+        private int clampChange(int prev, int curr) {
+            if (prev == 0) return 100; // starting year, assume +100%
+            double raw = ((double) (curr - prev) / prev) * 100;
+            return clamp(raw);
+        }
+
+        // Bound percent result for dashboard friendliness
+        private int clamp(double value) {
+            if (value > 100) return 100;
+            if (value < -100) return -100;
+            return (int) Math.round(value);
+        }
+
 }

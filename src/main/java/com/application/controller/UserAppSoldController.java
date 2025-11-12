@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.application.dto.FullGraphResponseDTO;
+import com.application.dto.GraphResponseDTO;
 import com.application.dto.PerformanceDTO;
 import com.application.dto.RateResponseDTO;
 import com.application.dto.UserAppSoldDTO;
@@ -65,13 +66,18 @@ public class UserAppSoldController {
 		return userAppSoldService.getAnalyticsByEntityId(entityId);
 	}
 	
-	 @GetMapping("/graph")
-	 public List<FullGraphResponseDTO> getAllGraphs() {
-		    return userAppSoldService.getAllGraphs();
-		}
+//	 @GetMapping("/graph")
+//	 public List<FullGraphResponseDTO> getAllGraphs() {
+//		    return userAppSoldService.getAllGraphs();
+//		}
 	 
 	 @GetMapping("/top_drop_rate")//used
 	    public ResponseEntity<List<RateResponseDTO>> getAllRateData() {
 	        return ResponseEntity.ok(userAppSoldService.getAllRateData());
+	    }
+	 
+	 @GetMapping("overall_graph")
+	    public GraphResponseDTO getYearWiseIssuedSoldPercentages() {
+	        return userAppSoldService.generateYearWiseIssuedSoldPercentage();
 	    }
 }

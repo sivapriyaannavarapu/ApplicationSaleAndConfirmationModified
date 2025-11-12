@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.application.dto.GenericDropdownDTO;
@@ -19,10 +20,15 @@ public class AppStatusTrackController {
 	@Autowired
 	private AppStatusTrackService appStatusTrackService;
 
+//	@GetMapping("/cards")
+//    public List<MetricCardDTO> getDashboardCards() {
+//        return appStatusTrackService.getDashboardCards();
+//    }
+	
 	@GetMapping("/cards")
-    public List<MetricCardDTO> getDashboardCards() {
-        return appStatusTrackService.getDashboardCards();
-    }
+	public List<MetricCardDTO> getMetrics() {
+	    return appStatusTrackService.getMetricCards();
+	}
 
     @GetMapping("/cards/employee/{empId}")
     public List<MetricCardDTO> getDashboardCardsByEmployee(@PathVariable Integer empId) {
