@@ -52,36 +52,40 @@ public class ApplicationAnalyticsService {
      */
     public CombinedAnalyticsDTO getRollupAnalytics(Integer empId) {
         
-        List<SCEmployeeEntity> employeeList = scEmployeeRepository.findByEmpId(empId);
-        
-        if (employeeList.isEmpty()) {
-            return createEmptyAnalytics("Invalid Employee", empId, "Employee not found");
-        }
-        
-        SCEmployeeEntity employee = employeeList.get(0);
-        String role = employee.getEmpStudApplicationRole();
- 
-        if (role == null) {
-             System.err.println("Employee " + empId + " has a null role.");
-             return createEmptyAnalytics("Null Role", empId, "Employee has no role");
-        }
- 
-        String trimmedRole = role.trim();
- 
-        // --- Router logic ---
-        if (trimmedRole.equalsIgnoreCase("DGM")) {
-            // If DGM, run the DGM-to-Campus rollup
-            return getDgmCampusRollupAnalytics(employee);
-            
-        } else if (trimmedRole.equalsIgnoreCase("ZONAL ACCOUNTANT")) {
-            // If Zonal Accountant, run the Zonal-to-DGM rollup
-            return getZonalDgmRollupAnalytics(employee);
-            
-        } else {
-            // If any other role (like PRO), they don't get this view
-            return createEmptyAnalytics(role, empId, "This role does not have a rollup view");
-        }
+    List<SCEmployeeEntity> employeeList = scEmployeeRepository.findByEmpId(empId);
+    
+    // Employee not found
+    if (employeeList.isEmpty()) {
+        // Pass "N/A" for designation since we don't have the employee record
+        return createEmptyAnalytics("Invalid Employee", empId, "Employee not found", "N/A"); 
     }
+    
+    SCEmployeeEntity employee = employeeList.get(0);
+    String role = employee.getEmpStudApplicationRole();
+    String designation = employee.getDesignationName(); // <--- GET DESIGNATION HERE
+
+    // Null role
+    if (role == null) {
+         System.err.println("Employee " + empId + " has a null role.");
+         return createEmptyAnalytics("Null Role", empId, "Employee has no role", designation); // <--- PASS DESIGNATION
+    }
+
+    String trimmedRole = role.trim();
+
+    // --- Router logic ---
+    if (trimmedRole.equalsIgnoreCase("DGM")) {
+        // If DGM, run the DGM-to-Campus rollup
+        return getDgmCampusRollupAnalytics(employee);
+        
+    } else if (trimmedRole.equalsIgnoreCase("ZONAL ACCOUNTANT")) {
+        // If Zonal Accountant, run the Zonal-to-DGM rollup
+        return getZonalDgmRollupAnalytics(employee);
+        
+    } else {
+        // If any other role, they don't get this view
+        return createEmptyAnalytics(role, empId, "This role does not have a rollup view", designation); // <--- PASS DESIGNATION
+    }
+}
  
     
     // --- "NORMAL" ROUTER METHOD (Unchanged) ---
@@ -90,63 +94,68 @@ public class ApplicationAnalyticsService {
      * This is the original "normal" view for DGM, Zonal, or PRO.
      * It shows data for *only* their direct entity.
      */
-    public CombinedAnalyticsDTO getAnalyticsForEmployee(Integer empId) {
+   public CombinedAnalyticsDTO getAnalyticsForEmployee(Integer empId) {
         
-        List<SCEmployeeEntity> employeeList = scEmployeeRepository.findByEmpId(empId);
-        
-        if (employeeList.isEmpty()) {
-            System.err.println("No employee found with ID: " + empId);
-            return createEmptyAnalytics("Invalid Employee", empId, "Employee not found");
-        }
-        
-        SCEmployeeEntity employee = employeeList.get(0);
-        String role = employee.getEmpStudApplicationRole();
-        
-        if (role == null) {
-             System.err.println("Employee " + empId + " has a null role.");
-             return createEmptyAnalytics("Null Role", empId, "Employee has no role");
-        }
-        
-        String trimmedRole = role.trim();
-        CombinedAnalyticsDTO analytics;
-        
-        if (trimmedRole.equalsIgnoreCase("DGM")) {
-            analytics = getDgmAnalytics(empId);
-            analytics.setRole("DGM");
-            analytics.setEntityName(employee.getFirstName() + " " + employee.getLastName());
-            analytics.setEntityId(empId);
-            return analytics;
-            
-        } else if (trimmedRole.equalsIgnoreCase("ZONAL ACCOUNTANT")) {
-            int zoneId = employee.getZoneId();
-            analytics = getZoneAnalytics((long) zoneId);
-            analytics.setRole("Zonal Account");
-            analytics.setEntityName(employee.getZoneName());
-            analytics.setEntityId(zoneId);
-            return analytics;
-            
-        } else if (trimmedRole.equalsIgnoreCase("PRO")) {
-            int campusId = employee.getEmpCampusId();
-            analytics = getCampusAnalytics((long) campusId);
-            analytics.setRole("PRO");
-            analytics.setEntityName(employee.getCampusName());
-            analytics.setEntityId(campusId);
-            return analytics;
-            
-        } else {
-            System.err.println("Unrecognized role '" + role + "' for empId: " + empId);
-            return createEmptyAnalytics(role, empId, "Unrecognized role");
-        }
+    List<SCEmployeeEntity> employeeList = scEmployeeRepository.findByEmpId(empId);
+    
+    // Employee not found
+    if (employeeList.isEmpty()) {
+        System.err.println("No employee found with ID: " + empId);
+        // Pass "N/A" for designation
+        return createEmptyAnalytics("Invalid Employee", empId, "Employee not found", "N/A"); 
     }
+    
+    SCEmployeeEntity employee = employeeList.get(0);
+    String role = employee.getEmpStudApplicationRole();
+    String designation = employee.getDesignationName(); // <--- GET DESIGNATION HERE
+    
+    // Null role
+    if (role == null) {
+         System.err.println("Employee " + empId + " has a null role.");
+         return createEmptyAnalytics("Null Role", empId, "Employee has no role", designation); // <--- PASS DESIGNATION
+    }
+    
+    String trimmedRole = role.trim();
+    CombinedAnalyticsDTO analytics;
+    
+    if (trimmedRole.equalsIgnoreCase("DGM")) {
+        analytics = getDgmAnalytics(empId);
+        analytics.setRole("DGM");
+        analytics.setEntityName(employee.getFirstName() + " " + employee.getLastName());
+        analytics.setEntityId(empId);
+        
+    } else if (trimmedRole.equalsIgnoreCase("ZONAL ACCOUNTANT")) {
+        int zoneId = employee.getZoneId();
+        analytics = getZoneAnalytics((long) zoneId);
+        analytics.setRole("Zonal Account");
+        analytics.setEntityName(employee.getZoneName());
+        analytics.setEntityId(zoneId);
+        
+    } else if (trimmedRole.equalsIgnoreCase("PRO")) {
+        int campusId = employee.getEmpCampusId();
+        analytics = getCampusAnalytics((long) campusId);
+        analytics.setRole("PRO");
+        analytics.setEntityName(employee.getCampusName());
+        analytics.setEntityId(campusId);
+        
+    } else {
+        System.err.println("Unrecognized role '" + role + "' for empId: " + empId);
+        return createEmptyAnalytics(role, empId, "Unrecognized role", designation); // <--- PASS DESIGNATION
+    }
+    
+    // <--- SET DESIGNATION BEFORE RETURNING --->
+    analytics.setDesignationName(designation); 
+    return analytics;
+}
  
-    private CombinedAnalyticsDTO createEmptyAnalytics(String role, Integer id, String name) {
+    private CombinedAnalyticsDTO createEmptyAnalytics(String role, Integer id, String name, String designationName) {
         CombinedAnalyticsDTO analytics = new CombinedAnalyticsDTO();
         analytics.setRole(role);
+        analytics.setDesignationName(designationName); // <--- Set designation here
         analytics.setEntityId(id);
         analytics.setEntityName(name);
         return analytics;
     }
- 
     // --- CORE ANALYTICS METHODS (Unchanged) ---
  
     public CombinedAnalyticsDTO getZoneAnalytics(Long zoneId) {
@@ -202,50 +211,62 @@ public class ApplicationAnalyticsService {
     /**
      * PRIVATE: Gets analytics for a DGM's *assigned campuses*.
      */
+    /**
+     * PRIVATE: Gets analytics for a DGM's *assigned campuses*.
+     */
     private CombinedAnalyticsDTO getDgmCampusRollupAnalytics(SCEmployeeEntity employee) {
         
         int dgmEmpId = employee.getEmpId();
+        String designation = employee.getDesignationName(); // <--- GET DESIGNATION
         List<Integer> campusIds = dgmRepository.findCampusIdsByEmployeeId(dgmEmpId);
         
         if (campusIds.isEmpty()) {
-            return createEmptyAnalytics(employee.getEmpStudApplicationRole(), dgmEmpId, "DGM manages 0 campuses");
+            // Pass designation name in createEmptyAnalytics
+            return createEmptyAnalytics(employee.getEmpStudApplicationRole(), dgmEmpId, "DGM manages 0 campuses", designation);
         }
- 
+
         System.out.println("DGM " + dgmEmpId + " is viewing analytics for " + campusIds.size() + " campuses.");
         CombinedAnalyticsDTO analytics = new CombinedAnalyticsDTO();
- 
+
         analytics.setGraphData(getGraphDataForCampusList(campusIds));
         analytics.setMetricsData(getMetricsDataForCampusList(campusIds));
         
         analytics.setRole("DGM (Campus Rollup)");
+        analytics.setDesignationName(designation); // <--- SET DESIGNATION HERE
         analytics.setEntityName(employee.getFirstName() + " " + employee.getLastName());
         analytics.setEntityId(dgmEmpId);
         
         return analytics;
     }
-    
+
     /**
      * PRIVATE: Gets analytics for a Zonal Accountant's *managed DGMs*.
      */
     private CombinedAnalyticsDTO getZonalDgmRollupAnalytics(SCEmployeeEntity employee) {
         
         int zoneId = employee.getZoneId();
+        int empId = employee.getEmpId();
+        String designation = employee.getDesignationName(); // <--- GET DESIGNATION
+        
         if (zoneId <= 0) {
-            return createEmptyAnalytics(employee.getEmpStudApplicationRole(), employee.getEmpId(), "Zonal Accountant has no valid zone ID");
+            // Pass designation name in createEmptyAnalytics
+            return createEmptyAnalytics(employee.getEmpStudApplicationRole(), empId, "Zonal Accountant has no valid zone ID", designation);
         }
- 
+
         List<Integer> dgmEmpIds = dgmRepository.findEmployeeIdsByZoneId(zoneId);
         if (dgmEmpIds.isEmpty()) {
-            return createEmptyAnalytics(employee.getEmpStudApplicationRole(), employee.getEmpId(), "Zonal Accountant manages 0 DGMs");
+            // Pass designation name in createEmptyAnalytics
+            return createEmptyAnalytics(employee.getEmpStudApplicationRole(), empId, "Zonal Accountant manages 0 DGMs", designation);
         }
- 
-        System.out.println("Zonal Acct " + employee.getEmpId() + " is viewing analytics for " + dgmEmpIds.size() + " DGMs.");
+
+        System.out.println("Zonal Acct " + empId + " is viewing analytics for " + dgmEmpIds.size() + " DGMs.");
         CombinedAnalyticsDTO analytics = new CombinedAnalyticsDTO();
- 
+
         analytics.setGraphData(getGraphDataForDgmList(dgmEmpIds));
         analytics.setMetricsData(getMetricsDataForDgmList(dgmEmpIds));
         
         analytics.setRole("Zonal Accountant (DGM Rollup)");
+        analytics.setDesignationName(designation); // <--- SET DESIGNATION HERE
         analytics.setEntityName(employee.getZoneName());
         analytics.setEntityId(zoneId);
         

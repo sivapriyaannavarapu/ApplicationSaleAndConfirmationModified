@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CombinedAnalyticsDTO {
     private String role;
+    private String designationName;
     private String entityName;
     private Integer entityId;
     private GraphDTO graphData;
