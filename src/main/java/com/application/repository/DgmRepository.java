@@ -1,3 +1,4 @@
+
 package com.application.repository;
 
 import java.util.List;
@@ -48,6 +49,13 @@ public interface DgmRepository extends JpaRepository<Dgm, Integer> {
 	    
 	    @Query("SELECT DISTINCT d.campus.campusId FROM Dgm d WHERE d.zone.zoneId IN :zoneIds")
 	    List<Integer> findCampusIdsByZoneIds(List<Integer> zoneIds);
+	    
+	    @Query("SELECT d.campus.id FROM Dgm d WHERE d.employee.id = :empId")
+	    List<Integer> findCampusIdsByEmployeeId(@Param("empId") Integer empId);
+	    
+	    @Query("SELECT d.employee.id FROM Dgm d WHERE d.zone.id = :zoneId AND d.isActive = 1")
+	    List<Integer> findEmployeeIdsByZoneId(@Param("zoneId") Integer zoneId);
+
 
 
 }

@@ -1,5 +1,6 @@
 package com.application.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -30,4 +31,7 @@ public class Dgm {
 	@ManyToOne
 	@JoinColumn(name = "emp_id")
 	private Employee employee;
+	
+	@Column(name = "is_active")
+    private int isActive;
 }

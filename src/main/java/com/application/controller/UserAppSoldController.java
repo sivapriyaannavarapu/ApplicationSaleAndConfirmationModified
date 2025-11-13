@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.application.dto.FullGraphResponseDTO;
+import com.application.dto.DashboardResponseDTO;
 import com.application.dto.GraphResponseDTO;
 import com.application.dto.PerformanceDTO;
 import com.application.dto.RateResponseDTO;
@@ -80,4 +80,5 @@ public class UserAppSoldController {
 	    public GraphResponseDTO getYearWiseIssuedSoldPercentages() {
 	        return userAppSoldService.generateYearWiseIssuedSoldPercentage();
 	    }
+	 
 }

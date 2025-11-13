@@ -185,4 +185,47 @@ public interface UserAppSoldRepository extends JpaRepository<UserAppSold, Long> 
 			    @Param("acdcYearId") Integer acdcYearId
 			);
 
+			// UserAppSoldRepository.java
+						@Query("SELECT DISTINCT uas.acdcYearId FROM UserAppSold uas WHERE uas.isActive = 1 AND uas.entityId = :entityId")
+						List<Integer> findDistinctAcdcYearIdsByEntity(@Param("entityId") Integer entityId);
+			 
+						
+			 
+					    // --- NEW: Method for a LIST of campuses (DGM-Rollup) ---
+					    @Query("SELECT NEW com.application.dto.GraphSoldSummaryDTO(COALESCE(SUM(uas.totalAppCount), 0), COALESCE(SUM(uas.sold), 0)) FROM UserAppSold uas WHERE uas.entityId = 4 AND uas.campus.id IN :campusIds AND uas.acdcYearId = :acdcYearId")
+					    Optional<GraphSoldSummaryDTO> getSalesSummaryByCampusList(@Param("campusIds") List<Integer> campusIds, @Param("acdcYearId") Integer acdcYearId);
+			 
+					    // --- NEW: Method for a LIST of campuses (DGM-Rollup) ---
+					    @Query("SELECT COALESCE(SUM(uas.totalAppCount), 0) FROM UserAppSold uas WHERE uas.entityId = 4 AND uas.campus.id IN :campusIds AND uas.acdcYearId = :acdcYearId")
+					    Optional<Long> getProMetricByCampusList(@Param("campusIds") List<Integer> campusIds, @Param("acdcYearId") Integer acdcYearId);
+			 
+			 
+					    // --- Methods to find distinct years for GRAPH ---
+					    
+					    @Query("SELECT DISTINCT uas.acdcYearId FROM UserAppSold uas WHERE uas.entityId = 2 AND uas.zone.id = :zoneId")
+					    List<Integer> findDistinctYearIdsByZone(@Param("zoneId") Integer zoneId);
+			 
+					    @Query("SELECT DISTINCT uas.acdcYearId FROM UserAppSold uas WHERE uas.entityId = 3 AND uas.empId = :dgmId")
+					    List<Integer> findDistinctYearIdsByDgm(@Param("dgmId") Integer dgmId);
+			 
+					    // This method is for a single campus (PRO role)
+					    @Query("SELECT DISTINCT uas.acdcYearId FROM UserAppSold uas WHERE uas.entityId = 4 AND uas.campus.id = :campusId")
+					    List<Integer> findDistinctYearIdsByCampus(@Param("campusId") Integer campusId);
+			 
+					    // --- NEW: Method for a LIST of campuses (DGM-Rollup) ---
+					    @Query("SELECT DISTINCT uas.acdcYearId FROM UserAppSold uas WHERE uas.entityId = 4 AND uas.campus.id IN :campusIds")
+					    List<Integer> findDistinctYearIdsByCampusList(@Param("campusIds") List<Integer> campusIds);
+					    
+					 // --- NEW: DGM List query for Zonal Rollup (Graph) ---
+					    @Query("SELECT NEW com.application.dto.GraphSoldSummaryDTO(COALESCE(SUM(uas.totalAppCount), 0), COALESCE(SUM(uas.sold), 0)) FROM UserAppSold uas WHERE uas.entityId = 3 AND uas.empId IN :dgmEmpIds AND uas.acdcYearId = :acdcYearId")
+					    Optional<GraphSoldSummaryDTO> getSalesSummaryByDgmList(@Param("dgmEmpIds") List<Integer> dgmEmpIds, @Param("acdcYearId") Integer acdcYearId);
+					    
+					 // --- NEW: DGM List query for Zonal Rollup ('With PRO' card) ---
+					    @Query("SELECT COALESCE(SUM(uas.totalAppCount), 0) FROM UserAppSold uas WHERE uas.entityId = 4 AND uas.empId IN :dgmEmpIds AND uas.acdcYearId = :acdcYearId")
+					    Optional<Long> getProMetricByDgmList(@Param("dgmEmpIds") List<Integer> dgmEmpIds, @Param("acdcYearId") Integer acdcYearId);
+					    
+					 // --- NEW: DGM List query for Zonal Rollup (Years) ---
+					    @Query("SELECT DISTINCT uas.acdcYearId FROM UserAppSold uas WHERE uas.entityId = 3 AND uas.empId IN :dgmEmpIds")
+					    List<Integer> findDistinctYearIdsByDgmList(@Param("dgmEmpIds") List<Integer> dgmEmpIds);
+			 
 }

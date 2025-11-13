@@ -1,10 +1,11 @@
 package com.application.service;
  
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,9 +17,11 @@ import com.application.dto.MetricDTO;
 import com.application.dto.MetricsAggregateDTO;
 import com.application.dto.MetricsDataDTO;
 import com.application.dto.YearlyGraphPointDTO;
+import com.application.entity.AcademicYear;
 import com.application.entity.SCEmployeeEntity;
 import com.application.repository.AcademicYearRepository;
 import com.application.repository.AppStatusTrackRepository;
+import com.application.repository.DgmRepository;
 import com.application.repository.SCEmployeeRepository;
 import com.application.repository.UserAppSoldRepository;
  
@@ -36,25 +39,67 @@ public class ApplicationAnalyticsService {
     
     @Autowired
     private SCEmployeeRepository scEmployeeRepository;
- 
-    // --- YEARS UPDATED ---
-    private static final List<Integer> GRAPH_YEARS = Arrays.asList(2024, 2025, 2026);
-    private static final int METRICS_CURRENT_YEAR = 2026;
-    private static final int METRICS_PREVIOUS_YEAR = 2025;
-    // --- END OF UPDATE ---
- 
-    // --- Main Public Methods ---
     
-public CombinedAnalyticsDTO getAnalyticsForEmployee(Integer empId) {
+    @Autowired
+    private DgmRepository dgmRepository;
+ 
+    // --- NEW "MASTER ROLLUP" ROUTER METHOD ---
+    
+    /**
+     * NEW: This single method handles both DGM and Zonal rollup views.
+     * @param empId The employee ID of the DGM or Zonal Accountant.
+     * @return The combined analytics for their rollup view.
+     */
+    public CombinedAnalyticsDTO getRollupAnalytics(Integer empId) {
         
-        Optional<SCEmployeeEntity> employeeOpt = scEmployeeRepository.findById(empId);
+        List<SCEmployeeEntity> employeeList = scEmployeeRepository.findByEmpId(empId);
         
-        if (employeeOpt.isEmpty()) {
+        if (employeeList.isEmpty()) {
+            return createEmptyAnalytics("Invalid Employee", empId, "Employee not found");
+        }
+        
+        SCEmployeeEntity employee = employeeList.get(0);
+        String role = employee.getEmpStudApplicationRole();
+ 
+        if (role == null) {
+             System.err.println("Employee " + empId + " has a null role.");
+             return createEmptyAnalytics("Null Role", empId, "Employee has no role");
+        }
+ 
+        String trimmedRole = role.trim();
+ 
+        // --- Router logic ---
+        if (trimmedRole.equalsIgnoreCase("DGM")) {
+            // If DGM, run the DGM-to-Campus rollup
+            return getDgmCampusRollupAnalytics(employee);
+            
+        } else if (trimmedRole.equalsIgnoreCase("ZONAL ACCOUNTANT")) {
+            // If Zonal Accountant, run the Zonal-to-DGM rollup
+            return getZonalDgmRollupAnalytics(employee);
+            
+        } else {
+            // If any other role (like PRO), they don't get this view
+            return createEmptyAnalytics(role, empId, "This role does not have a rollup view");
+        }
+    }
+ 
+    
+    // --- "NORMAL" ROUTER METHOD (Unchanged) ---
+    
+    /**
+     * This is the original "normal" view for DGM, Zonal, or PRO.
+     * It shows data for *only* their direct entity.
+     */
+    public CombinedAnalyticsDTO getAnalyticsForEmployee(Integer empId) {
+        
+        List<SCEmployeeEntity> employeeList = scEmployeeRepository.findByEmpId(empId);
+        
+        if (employeeList.isEmpty()) {
             System.err.println("No employee found with ID: " + empId);
             return createEmptyAnalytics("Invalid Employee", empId, "Employee not found");
         }
         
-        SCEmployeeEntity employee = employeeOpt.get();
+        SCEmployeeEntity employee = employeeList.get(0);
         String role = employee.getEmpStudApplicationRole();
         
         if (role == null) {
@@ -62,44 +107,38 @@ public CombinedAnalyticsDTO getAnalyticsForEmployee(Integer empId) {
              return createEmptyAnalytics("Null Role", empId, "Employee has no role");
         }
         
+        String trimmedRole = role.trim();
         CombinedAnalyticsDTO analytics;
         
-        switch (role) {
-            case "DGM":
-                System.out.println("Routing to DGM Analytics for empId: " + empId);
-                analytics = getDgmAnalytics(empId);
-                analytics.setRole("DGM");
-                analytics.setEntityName(employee.getFirstName() + " " + employee.getLastName());
-                analytics.setEntityId(empId);
-                return analytics;
-                
-            case "Zonal Account":
-                int zoneId = employee.getZoneId();
-                System.out.println("Routing to Zone Analytics for zoneId: " + zoneId);
-                analytics = getZoneAnalytics((long) zoneId);
-                analytics.setRole("Zonal Account");
-                analytics.setEntityName(employee.getZoneName());
-                analytics.setEntityId(zoneId);
-                return analytics;
-                
-            case "PRO":
-                int campusId = employee.getEmpCampusId();
-                System.out.println("Routing to Campus Analytics for campusId: " + campusId);
-                analytics = getCampusAnalytics((long) campusId);
-                analytics.setRole("PRO");
-                analytics.setEntityName(employee.getCampusName());
-                analytics.setEntityId(campusId);
-                return analytics;
-                
-            default:
-                System.err.println("Unrecognized role '" + role + "' for empId: " + empId);
-                return createEmptyAnalytics(role, empId, "Unrecognized role");
+        if (trimmedRole.equalsIgnoreCase("DGM")) {
+            analytics = getDgmAnalytics(empId);
+            analytics.setRole("DGM");
+            analytics.setEntityName(employee.getFirstName() + " " + employee.getLastName());
+            analytics.setEntityId(empId);
+            return analytics;
+            
+        } else if (trimmedRole.equalsIgnoreCase("ZONAL ACCOUNTANT")) {
+            int zoneId = employee.getZoneId();
+            analytics = getZoneAnalytics((long) zoneId);
+            analytics.setRole("Zonal Account");
+            analytics.setEntityName(employee.getZoneName());
+            analytics.setEntityId(zoneId);
+            return analytics;
+            
+        } else if (trimmedRole.equalsIgnoreCase("PRO")) {
+            int campusId = employee.getEmpCampusId();
+            analytics = getCampusAnalytics((long) campusId);
+            analytics.setRole("PRO");
+            analytics.setEntityName(employee.getCampusName());
+            analytics.setEntityId(campusId);
+            return analytics;
+            
+        } else {
+            System.err.println("Unrecognized role '" + role + "' for empId: " + empId);
+            return createEmptyAnalytics(role, empId, "Unrecognized role");
         }
     }
  
-    /**
-     * Helper to create a default empty DTO with role info.
-     */
     private CombinedAnalyticsDTO createEmptyAnalytics(String role, Integer id, String name) {
         CombinedAnalyticsDTO analytics = new CombinedAnalyticsDTO();
         analytics.setRole(role);
@@ -108,148 +147,297 @@ public CombinedAnalyticsDTO getAnalyticsForEmployee(Integer empId) {
         return analytics;
     }
  
+    // --- CORE ANALYTICS METHODS (Unchanged) ---
+ 
     public CombinedAnalyticsDTO getZoneAnalytics(Long zoneId) {
         CombinedAnalyticsDTO analytics = new CombinedAnalyticsDTO();
-        
-        // 1. Graph from UserAppSold
         analytics.setGraphData(getGraphData(
-            (yearId) -> userAppSoldRepository.getSalesSummaryByZone(zoneId.intValue(), yearId)
+            (yearId) -> userAppSoldRepository.getSalesSummaryByZone(zoneId.intValue(), yearId),
+            () -> userAppSoldRepository.findDistinctYearIdsByZone(zoneId.intValue())
         ));
-        
-        // 2. Metrics from AppStatusTrack + 'With PRO' from UserAppSold
-        analytics.setMetricsData(getMetricsData(
-            (yearId) -> appStatusTrackRepository.getMetricsByZoneAndYear(zoneId, yearId),
-            (yearId) -> userAppSoldRepository.getProMetricByZone(zoneId.intValue(), yearId) // New PRO fetcher
-        ));
-        
+        analytics.setMetricsData(
+            getMetricsData(
+                (yearId) -> appStatusTrackRepository.getMetricsByZoneAndYear(zoneId, yearId),
+                (yearId) -> userAppSoldRepository.getProMetricByZone(zoneId.intValue(), yearId),
+                () -> appStatusTrackRepository.findDistinctYearIdsByZone(zoneId)
+            )
+        );
         return analytics;
     }
  
     public CombinedAnalyticsDTO getDgmAnalytics(Integer dgmEmpId) {
         CombinedAnalyticsDTO analytics = new CombinedAnalyticsDTO();
-        
-        // 1. Graph from UserAppSold
         analytics.setGraphData(getGraphData(
-            (yearId) -> userAppSoldRepository.getSalesSummaryByDgm(dgmEmpId, yearId)
+            (yearId) -> userAppSoldRepository.getSalesSummaryByDgm(dgmEmpId, yearId),
+            () -> userAppSoldRepository.findDistinctYearIdsByDgm(dgmEmpId)
         ));
-        
-        // 2. Metrics from AppStatusTrack + 'With PRO' from UserAppSold
-        analytics.setMetricsData(getMetricsData(
-            (yearId) -> appStatusTrackRepository.getMetricsByEmployeeAndYear(dgmEmpId, yearId),
-            (yearId) -> userAppSoldRepository.getProMetricByDgm(dgmEmpId, yearId) // New PRO fetcher
-        ));
-        
+        analytics.setMetricsData(
+            getMetricsData(
+                (yearId) -> appStatusTrackRepository.getMetricsByEmployeeAndYear(dgmEmpId, yearId),
+                (yearId) -> userAppSoldRepository.getProMetricByDgm(dgmEmpId, yearId),
+                () -> appStatusTrackRepository.findDistinctYearIdsByEmployee(dgmEmpId)
+            )
+        );
         return analytics;
     }
  
     public CombinedAnalyticsDTO getCampusAnalytics(Long campusId) {
         CombinedAnalyticsDTO analytics = new CombinedAnalyticsDTO();
-        
-        // 1. Graph from UserAppSold
         analytics.setGraphData(getGraphData(
-            (yearId) -> userAppSoldRepository.getSalesSummaryByCampus(campusId.intValue(), yearId)
+            (yearId) -> userAppSoldRepository.getSalesSummaryByCampus(campusId.intValue(), yearId),
+            () -> userAppSoldRepository.findDistinctYearIdsByCampus(campusId.intValue())
         ));
-        
-        // 2. Metrics from AppStatusTrack + 'With PRO' from UserAppSold
-        analytics.setMetricsData(getMetricsData(
-            (yearId) -> appStatusTrackRepository.getMetricsByCampusAndYear(campusId, yearId),
-            (yearId) -> userAppSoldRepository.getProMetricByCampus(campusId.intValue(), yearId) // New PRO fetcher
-        ));
-        
+        analytics.setMetricsData(
+            getMetricsData(
+                (yearId) -> appStatusTrackRepository.getMetricsByCampusAndYear(campusId, yearId),
+                (yearId) -> userAppSoldRepository.getProMetricByCampus(campusId.intValue(), yearId),
+                () -> appStatusTrackRepository.findDistinctYearIdsByCampus(campusId)
+            )
+        );
         return analytics;
     }
  
-    // --- Private Graph Data Helper (uses UserAppSold) ---
+    // --- ROLLUP LOGIC (Now private helpers) ---
+    
+    /**
+     * PRIVATE: Gets analytics for a DGM's *assigned campuses*.
+     */
+    private CombinedAnalyticsDTO getDgmCampusRollupAnalytics(SCEmployeeEntity employee) {
+        
+        int dgmEmpId = employee.getEmpId();
+        List<Integer> campusIds = dgmRepository.findCampusIdsByEmployeeId(dgmEmpId);
+        
+        if (campusIds.isEmpty()) {
+            return createEmptyAnalytics(employee.getEmpStudApplicationRole(), dgmEmpId, "DGM manages 0 campuses");
+        }
  
-    private GraphDTO getGraphData(Function<Integer, Optional<GraphSoldSummaryDTO>> dataFetcher) {
+        System.out.println("DGM " + dgmEmpId + " is viewing analytics for " + campusIds.size() + " campuses.");
+        CombinedAnalyticsDTO analytics = new CombinedAnalyticsDTO();
+ 
+        analytics.setGraphData(getGraphDataForCampusList(campusIds));
+        analytics.setMetricsData(getMetricsDataForCampusList(campusIds));
+        
+        analytics.setRole("DGM (Campus Rollup)");
+        analytics.setEntityName(employee.getFirstName() + " " + employee.getLastName());
+        analytics.setEntityId(dgmEmpId);
+        
+        return analytics;
+    }
+    
+    /**
+     * PRIVATE: Gets analytics for a Zonal Accountant's *managed DGMs*.
+     */
+    private CombinedAnalyticsDTO getZonalDgmRollupAnalytics(SCEmployeeEntity employee) {
+        
+        int zoneId = employee.getZoneId();
+        if (zoneId <= 0) {
+            return createEmptyAnalytics(employee.getEmpStudApplicationRole(), employee.getEmpId(), "Zonal Accountant has no valid zone ID");
+        }
+ 
+        List<Integer> dgmEmpIds = dgmRepository.findEmployeeIdsByZoneId(zoneId);
+        if (dgmEmpIds.isEmpty()) {
+            return createEmptyAnalytics(employee.getEmpStudApplicationRole(), employee.getEmpId(), "Zonal Accountant manages 0 DGMs");
+        }
+ 
+        System.out.println("Zonal Acct " + employee.getEmpId() + " is viewing analytics for " + dgmEmpIds.size() + " DGMs.");
+        CombinedAnalyticsDTO analytics = new CombinedAnalyticsDTO();
+ 
+        analytics.setGraphData(getGraphDataForDgmList(dgmEmpIds));
+        analytics.setMetricsData(getMetricsDataForDgmList(dgmEmpIds));
+        
+        analytics.setRole("Zonal Accountant (DGM Rollup)");
+        analytics.setEntityName(employee.getZoneName());
+        analytics.setEntityId(zoneId);
+        
+        return analytics;
+    }
+    
+    // --- PRIVATE HELPER METHODS for ROLLUPS (Unchanged) ---
+    
+    private GraphDTO getGraphDataForCampusList(List<Integer> campusIds) {
+        return getGraphData(
+            (yearId) -> userAppSoldRepository.getSalesSummaryByCampusList(campusIds, yearId),
+            () -> userAppSoldRepository.findDistinctYearIdsByCampusList(campusIds)
+        );
+    }
+    
+    private MetricsDataDTO getMetricsDataForCampusList(List<Integer> campusIds) {
+        return getMetricsData(
+            (yearId) -> appStatusTrackRepository.getMetricsByCampusListAndYear(campusIds, yearId),
+            (yearId) -> userAppSoldRepository.getProMetricByCampusList(campusIds, yearId),
+            () -> appStatusTrackRepository.findDistinctYearIdsByCampusList(campusIds)
+        );
+    }
+ 
+    private GraphDTO getGraphDataForDgmList(List<Integer> dgmEmpIds) {
+        return getGraphData(
+            (yearId) -> userAppSoldRepository.getSalesSummaryByDgmList(dgmEmpIds, yearId),
+            () -> userAppSoldRepository.findDistinctYearIdsByDgmList(dgmEmpIds)
+        );
+    }
+    
+    private MetricsDataDTO getMetricsDataForDgmList(List<Integer> dgmEmpIds) {
+        return getMetricsData(
+            (yearId) -> appStatusTrackRepository.getMetricsByEmployeeListAndYear(dgmEmpIds, yearId),
+            (yearId) -> userAppSoldRepository.getProMetricByDgmList(dgmEmpIds, yearId),
+            () -> appStatusTrackRepository.findDistinctYearIdsByEmployeeList(dgmEmpIds)
+        );
+    }
+ 
+ 
+    // --- Private Graph Data Helper (Unchanged) ---
+ 
+    private GraphDTO getGraphData(
+            Function<Integer, Optional<GraphSoldSummaryDTO>> dataFetcher,
+            Supplier<List<Integer>> yearFetcher) {
+        
         GraphDTO graphData = new GraphDTO();
         List<YearlyGraphPointDTO> yearlyDataList = new ArrayList<>();
-        
-        for (int year : GRAPH_YEARS) { // Will use [2024, 2025, 2026]
-            try {
-                int acdcYearId = getAcdcYearId(year);
-                String yearName = String.valueOf(year); // Using int year to avoid 'yearName' crash
  
-                // Get the data from UserAppSold
+        try {
+            List<Integer> existingYearIds = yearFetcher.get();
+ 
+            List<AcademicYear> academicYears = academicYearRepository.findByAcdcYearIdIn(existingYearIds)
+                    .stream()
+                    .sorted(Comparator.comparingInt(AcademicYear::getAcdcYearId))
+                    .toList();
+ 
+            for (AcademicYear year : academicYears) {
+                int acdcYearId = year.getAcdcYearId();
+                String yearLabel = year.getAcademicYear();
+ 
                 GraphSoldSummaryDTO summary = dataFetcher.apply(acdcYearId)
-                    .orElse(new GraphSoldSummaryDTO());
+                        .orElse(new GraphSoldSummaryDTO(0L, 0L));
  
-                long totalAppCount = summary.totalApplications();
-                long soldCount = summary.totalSold();
-                
-                double totalAppPercent = 100.0; // Bar is always 100%
-                double soldPercent = calculatePercentage(soldCount, totalAppCount); // (sold / total) * 100
+                long issued = summary.totalApplications();
+                long sold = summary.totalSold();
+ 
+                double issuedPercent = issued > 0 ? 100.0 : 0.0;
+                double soldPercent = (issued > 0)
+                        ? Math.min(100.0, ((double) sold / issued) * 100.0)
+                        : 0.0;
  
                 yearlyDataList.add(new YearlyGraphPointDTO(
-                    yearName, totalAppPercent, soldPercent, totalAppCount, soldCount
+                        yearLabel, issuedPercent, soldPercent, issued, sold
                 ));
- 
-            } catch (Exception e) {
-                System.err.println("Error fetching graph data for year " + year + ": " + e.getMessage());
-                yearlyDataList.add(new YearlyGraphPointDTO(String.valueOf(year), 0, 0, 0, 0));
             }
+ 
+            if (!academicYears.isEmpty()) {
+                graphData.setTitle("Application Sales Percentage (" +
+                        academicYears.get(0).getAcademicYear() + "–" +
+                        academicYears.get(academicYears.size() - 1).getAcademicYear() + ")");
+            } else {
+                graphData.setTitle("Application Sales Percentage (No Data)");
+            }
+ 
+        } catch (Exception e) {
+            System.err.println("Error fetching graph data: " + e.getMessage());
+            e.printStackTrace();
         }
+ 
         graphData.setYearlyData(yearlyDataList);
         return graphData;
     }
  
-    // --- Private Metrics Data Helper (UPDATED to accept 'With PRO' fetcher) ---
+    // --- Private Metrics Data Helper (Unchanged) ---
  
     private MetricsDataDTO getMetricsData(
-            Function<Integer, Optional<MetricsAggregateDTO>> appTrackFetcher,
-            Function<Integer, Optional<Long>> proMetricFetcher) {
-        
-        MetricsDataDTO metricsData = new MetricsDataDTO();
-        metricsData.setCurrentYear(METRICS_CURRENT_YEAR);
-        metricsData.setPreviousYear(METRICS_PREVIOUS_YEAR);
-        
+            Function<Integer, Optional<MetricsAggregateDTO>> dataFetcher,
+            Function<Integer, Optional<Long>> proFetcher,
+            Supplier<List<Integer>> yearFetcher) {
+ 
+        MetricsDataDTO dto = new MetricsDataDTO();
+ 
         try {
-            int currentYearId = getAcdcYearId(METRICS_CURRENT_YEAR);
-            int previousYearId = getAcdcYearId(METRICS_PREVIOUS_YEAR);
  
-            // 1. Get main metrics from AppStatusTrack
-            MetricsAggregateDTO currentMetrics = appTrackFetcher.apply(currentYearId)
-                .orElse(new MetricsAggregateDTO());
-            MetricsAggregateDTO previousMetrics = appTrackFetcher.apply(previousYearId)
-                .orElse(new MetricsAggregateDTO());
-            
-            // 2. Get 'With PRO' metric from UserAppSold
-            long proCurrent = proMetricFetcher.apply(currentYearId).orElse(0L);
-            long proPrevious = proMetricFetcher.apply(previousYearId).orElse(0L);
+            List<Integer> yearIds = yearFetcher.get();
  
-            // 3. Build the list, now passing the PRO metric
-            metricsData.setMetrics(buildMetricsList(currentMetrics, previousMetrics, proCurrent, proPrevious));
-        } catch (Exception e) {
-            System.err.println("Error fetching metrics data: " + e.getMessage());
-            metricsData.setMetrics(new ArrayList<>());
+            if (yearIds.isEmpty()) {
+                dto.setMetrics(new ArrayList<>());
+                return dto;
+            }
+ 
+            yearIds.sort(Integer::compare);
+ 
+            int currentYearId = yearIds.get(yearIds.size() - 1);
+            int previousYearId = (yearIds.size() > 1)
+                    ? yearIds.get(yearIds.size() - 2)
+                    : currentYearId;
+ 
+            AcademicYear cy = academicYearRepository.findById(currentYearId).orElse(null);
+            AcademicYear py = academicYearRepository.findById(previousYearId).orElse(null);
+ 
+            dto.setCurrentYear(cy != null ? cy.getYear() : 0);
+            dto.setPreviousYear(py != null ? py.getYear() : 0);
+ 
+            MetricsAggregateDTO curr = dataFetcher.apply(currentYearId)
+                    .orElse(new MetricsAggregateDTO());
+            MetricsAggregateDTO prev = dataFetcher.apply(previousYearId)
+                    .orElse(new MetricsAggregateDTO());
+ 
+            long proCurr = proFetcher.apply(currentYearId).orElse(0L);
+            long proPrev = proFetcher.apply(previousYearId).orElse(0L);
+ 
+            MetricsAggregateDTO totalMetrics = new MetricsAggregateDTO();
+            long totalPro = 0L;
+ 
+            for (Integer yid : yearIds) {
+                MetricsAggregateDTO yr = dataFetcher.apply(yid)
+                        .orElse(new MetricsAggregateDTO());
+                
+                totalMetrics = new MetricsAggregateDTO(
+                        totalMetrics.totalApp() + yr.totalApp(),
+                        totalMetrics.appSold() + yr.appSold(),
+                        totalMetrics.appConfirmed() + yr.appConfirmed(),
+                        totalMetrics.appAvailable() + yr.appAvailable(),
+                        totalMetrics.appUnavailable() + yr.appUnavailable(),
+                        totalMetrics.appDamaged() + yr.appDamaged(),
+                        totalMetrics.appIssued() + yr.appIssued()
+                );
+                
+                totalPro += proFetcher.apply(yid).orElse(0L);
+            }
+ 
+            List<MetricDTO> cards = buildMetricsList(curr, prev, totalMetrics, proCurr, proPrev, totalPro);
+ 
+            dto.setMetrics(cards);
+ 
+        } catch (Exception ex) {
+            System.out.println("🔥 METRICS ERROR: " + ex.getMessage());
+            ex.printStackTrace();
+            dto.setMetrics(new ArrayList<>());
         }
-        return metricsData;
+ 
+        return dto;
     }
  
     /**
      * Builds the metrics list.
-     * UPDATED to include 'proCurrent' and 'proPrevious'
      */
     private List<MetricDTO> buildMetricsList(
-            MetricsAggregateDTO current, MetricsAggregateDTO previous,
-            long proCurrent, long proPrevious) {
+            MetricsAggregateDTO current, MetricsAggregateDTO previous, MetricsAggregateDTO total,
+            long proCurrent, long proPrevious, long totalPro) {
         
         List<MetricDTO> metrics = new ArrayList<>();
  
         metrics.add(createMetric("Total Applications",
+            total.totalApp(),
             current.totalApp(), previous.totalApp()));
  
         double soldPercentCurrent = calculatePercentage(current.appSold(), current.totalApp());
         double soldPercentPrevious = calculatePercentage(previous.appSold(), previous.totalApp());
         metrics.add(createMetricWithPercentage("Sold",
-            current.appSold(), soldPercentCurrent, soldPercentPrevious));
+            total.appSold(),
+            soldPercentCurrent, soldPercentPrevious));
  
         double confirmedPercentCurrent = calculatePercentage(current.appConfirmed(), current.totalApp());
         double confirmedPercentPrevious = calculatePercentage(previous.appConfirmed(), previous.totalApp());
         metrics.add(createMetricWithPercentage("Confirmed",
-            current.appConfirmed(), confirmedPercentCurrent, confirmedPercentPrevious));
+            total.appConfirmed(),
+            confirmedPercentCurrent, confirmedPercentPrevious));
         
         metrics.add(createMetric("Available",
+            total.appAvailable(),
             current.appAvailable(), previous.appAvailable()));
  
         long validIssuedCurrent = Math.max(0, current.appIssued());
@@ -257,32 +445,34 @@ public CombinedAnalyticsDTO getAnalyticsForEmployee(Integer empId) {
         double issuedPercentCurrent = calculatePercentage(validIssuedCurrent, current.totalApp());
         double issuedPercentPrevious = calculatePercentage(validIssuedPrevious, previous.totalApp());
         metrics.add(createMetricWithPercentage("Issued",
-            current.appIssued(), issuedPercentCurrent, issuedPercentPrevious));
+            total.appIssued(),
+            issuedPercentCurrent, issuedPercentPrevious));
  
         metrics.add(createMetric("Damaged",
+            total.appDamaged(),
             current.appDamaged(), previous.appDamaged()));
             
         metrics.add(createMetric("Unavailable",
+            total.appUnavailable(),
             current.appUnavailable(), previous.appUnavailable()));
         
-        // --- ADDED 'WITH PRO' CARD ---
         metrics.add(createMetric("With PRO",
+            totalPro,
             proCurrent, proPrevious));
-        // --- END OF ADDITION ---
  
         return metrics;
     }
  
     // --- UTILITY METHODS ---
  
-    private MetricDTO createMetric(String title, long currentValue, long previousValue) {
+    private MetricDTO createMetric(String title, long totalValue, long currentValue, long previousValue) {
         double change = calculatePercentageChange(currentValue, previousValue);
-        return new MetricDTO(title, currentValue, change, getChangeDirection(change));
+        return new MetricDTO(title, totalValue, change, getChangeDirection(change));
     }
  
-    private MetricDTO createMetricWithPercentage(String title, long currentValue, double currentPercent, double previousPercent) {
+    private MetricDTO createMetricWithPercentage(String title, long totalValue, double currentPercent, double previousPercent) {
         double change = calculatePercentageChange(currentPercent, previousPercent);
-        return new MetricDTO(title, currentValue, change, getChangeDirection(change));
+        return new MetricDTO(title, totalValue, change, getChangeDirection(change));
     }
  
     private double calculatePercentage(long numerator, long denominator) {
@@ -303,7 +493,7 @@ public CombinedAnalyticsDTO getAnalyticsForEmployee(Integer empId) {
  
     private int getAcdcYearId(int year) {
         return academicYearRepository.findByYear(year)
-            .orElseThrow(() -> new RuntimeException("Academic year not found for: " + year))
-            .getAcdcYearId();
+                .map(AcademicYear::getAcdcYearId)
+                .orElse(0);
     }
 }
