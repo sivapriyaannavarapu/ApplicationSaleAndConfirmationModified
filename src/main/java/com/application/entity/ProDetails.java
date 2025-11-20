@@ -1,6 +1,5 @@
 package com.application.entity;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -10,32 +9,27 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "sce_dgm" , schema = "sce_application")
-public class Dgm {
+@Table(name = "sce_pro_detl" , schema = "sce_employee")
+public class ProDetails {
+
 	
 	@Id
-	private int dgm_id;
-	
-	@ManyToOne
-	@JoinColumn(name = "zone_id")
-	private Zone zone;
-	
-	@ManyToOne
+	private int pro_detl_id;
+	private String first_name;
+	private String last_name;
+	private Long primary_contact_no;
+	private Long secondary_contact_no;
+	private String email;
+    private String adress;
+    private int is_active;
+    
+    @ManyToOne
 	@JoinColumn(name = "cmps_id")
 	private Campus campus;
 	
-	@ManyToOne
-	@JoinColumn(name = "emp_id")
-	private Employee employee;
-	
-	@ManyToOne
-	@JoinColumn(name = "district_id")
-	private District district;
-	
-	@Column(name = "is_active")
-    private int isActive;
 }

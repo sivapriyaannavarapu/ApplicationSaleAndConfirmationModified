@@ -33,15 +33,15 @@ public class StudentAcademicDetails {
 	private LocalDate adms_date;
 	private int created_by;
 	private LocalDate doj;
-	private Integer orientation_id;
-	@Column(name = "orientation_batch_id")
-	private int orientation_batch_id;
+//	private Integer orientation_id;
+//	@Column(name = "orientation_batch_id")
+//	private int orientation_batch_id;
 	@Column(name = "pre_school_name")
 	private String pre_school_name;
 	private String admission_referred_by;
 	private String score_app_no;
 	private int score_marks;
-	private Date orientation_date;
+//	private Date orientation_date;
 	private int additional_orientation_fee;
 	private Date app_sale_date;
 	private Date app_conf_date;
@@ -108,21 +108,21 @@ public class StudentAcademicDetails {
 	@JoinColumn(name = "school_type_id")
 	private CampusSchoolType campusSchoolType;
 
-	@ManyToOne
-	@JoinColumn(name = "stream_id")
-	private Stream stream;
+//	@ManyToOne
+//	@JoinColumn(name = "stream_id")
+//	private Stream stream;
 
-	@ManyToOne
-	@JoinColumn(name = "program_id")
-	private ProgramName programName;
+//	@ManyToOne
+//	@JoinColumn(name = "program_id")
+//	private ProgramName programName;
 
-	@ManyToOne
-	@JoinColumn(name = "exam_program_id")
-	private ExamProgram examProgram;
+//	@ManyToOne
+//	@JoinColumn(name = "exam_program_id")
+//	private ExamProgram examProgram;
 
-	@ManyToOne
-	@JoinColumn(name = "cmps_orientation_id")
-	private CmpsOrientation cmpsOrientation;
+//	@ManyToOne
+//	@JoinColumn(name = "cmps_orientation_id")
+//	private CmpsOrientation cmpsOrientation;
 	
 	@ManyToOne
 	@JoinColumn(name = "pre_school_type_id",referencedColumnName = "school_type_id")

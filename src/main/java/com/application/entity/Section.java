@@ -22,9 +22,9 @@ public class Section {
 	@Column(name = "section_name")
 	private String sectionName;
 
-	@ManyToOne
-	@JoinColumn(name = "cmps_id")
-	private Campus campus;
+//	@ManyToOne
+//	@JoinColumn(name = "cmps_id")
+//	private Campus campus;
 
 	@ManyToOne
 	@JoinColumn(name = "class_id")

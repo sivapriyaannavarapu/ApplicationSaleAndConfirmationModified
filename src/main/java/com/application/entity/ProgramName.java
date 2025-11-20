@@ -22,8 +22,8 @@ public class ProgramName {
 	private int programId;
 	@Column(name = "program_name")
 	private String programName;
-	@Column(name = "stream_id")
-	private int streamId;
+//	@Column(name = "stream_id")
+//	private int streamId;
 	private int class_id;
 	private Integer promoting_program_id;
 	private Integer no_hours_day;

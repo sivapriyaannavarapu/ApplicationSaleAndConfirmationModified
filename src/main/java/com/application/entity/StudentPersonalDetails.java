@@ -23,17 +23,17 @@ public class StudentPersonalDetails {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int stud_personal_id;
-	private String father_name;
-	private String mother_name;
-	private Long parent_mobile_no;
-	private String parent_mail;
+//	private String father_name;
+//	private String mother_name;
+//	private Long parent_mobile_no;
+//	private String parent_mail;
 	private Long stud_aadhaar_no;
-	private String occupation;
+//	private String occupation;
 	private int is_active;
 	private int created_by;
 	private Date dob;
-	private String mail;
-	private int mail_is_verified;
+//	private String mail;
+//	private int mail_is_verified;
 	private int caste_id;
 	private int religion_id;
 	

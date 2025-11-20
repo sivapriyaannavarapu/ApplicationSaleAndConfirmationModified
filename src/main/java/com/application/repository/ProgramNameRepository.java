@@ -12,5 +12,5 @@ import com.application.entity.ProgramName;
 public interface ProgramNameRepository extends JpaRepository<ProgramName, Integer>{
 	
 	Optional<ProgramName> findByProgramName(String programName);
-	List<ProgramName> findByStreamId(int streamId);
+//	List<ProgramName> findByStreamId(int streamId);
 }
